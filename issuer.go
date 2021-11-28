@@ -232,3 +232,10 @@ func HandleRedeem(conn *net.TCPConn, req BlindTokenRequest, host, path string, k
 	metrics.CounterRedeemSuccess.Inc()
 	return nil
 }
+
+// XXX: TODO
+func HandleBid(conn *net.TCPConn, host, path string) error {
+	conn.Write([]byte("success"))
+	metrics.CounterBidSuccess.Inc()
+	return nil
+}

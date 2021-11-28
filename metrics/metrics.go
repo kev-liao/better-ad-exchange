@@ -59,6 +59,26 @@ var (
 		Name: "total_issue_error_format",
 		Help: "Total number of errors due to malformed issue requests",
 	})
+	CounterBidTotal = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "total_bid",
+		Help: "Total number of bid requests",
+	})
+	CounterBidSuccess = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "total_bid_success",
+		Help: "Total number of successful bids",
+	})
+	CounterBidError = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "total_bid_error",
+		Help: "Total number of errors with bid requests",
+	})
+	CounterBidErrorFormat = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "total_bid_error_format",
+		Help: "Total number of errors due to malformed bid requests",
+	})
+	CounterBidErrorVerify = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "total_bid_error_verify",
+		Help: "Total number of failed verification attempts of bids",
+	})	
 	CounterJsonError = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "total_json_error",
 		Help: "Total number of incorrect JSON failures",

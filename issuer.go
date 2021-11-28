@@ -8,8 +8,8 @@ import (
 	"math/big"
 	"net"
 
-	"github.com/privacypass/challenge-bypass-server/crypto"
-	"github.com/privacypass/challenge-bypass-server/metrics"
+	"github.com/kev-liao/challenge-bypass-server/crypto"
+	"github.com/kev-liao/challenge-bypass-server/metrics"
 )
 
 var (

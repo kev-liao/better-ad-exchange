@@ -1,7 +1,8 @@
 package main
 
 import (
-	"encoding/json"	
+	"encoding/json"
+	"errors"	
 	"flag"	
 	"fmt"
 	"io/ioutil"
@@ -14,9 +15,17 @@ import (
 	"github.com/kev-liao/challenge-bypass-server/crypto"
 )
 
-var errLog *log.Logger = log.New(os.Stderr, "[advertiser] ", log.LstdFlags|log.Lshortfile)
+var (
+	Version         = "dev"
 
-type Config struct {
+	ErrEmptyKeyPath        = errors.New("key file path is empty")
+	ErrRequestTooLarge     = errors.New("request too large to process")
+	ErrEmptyCommPath = errors.New("no commitment file path specified")
+
+	errLog *log.Logger = log.New(os.Stderr, "[btd] ", log.LstdFlags|log.Lshortfile)
+)
+
+type Client struct {
 	BindAddress        string `json:"bind_address,omitempty"`
 	ListenPort         int    `json:"listen_port,omitempty"`
 	MetricsPort        int    `json:"metrics_port,omitempty"`
@@ -32,7 +41,7 @@ type Config struct {
 	keyVersion string        // the version of the key that is used
 }
 
-var DefaultConfig = &Config{
+var DefaultClient = &Client{
 	BindAddress: "127.0.0.1",
 	ListenPort:  2416,
 	MetricsPort: 2417,
@@ -47,12 +56,12 @@ func wrapTokenRequest(req *btd.BlindTokenRequest) *btd.BlindTokenRequestWrapper 
 	return wrappedRequest
 }
 
-func (c *Config) loadKeys() error {
-	//if c.SignKeyFilePath == "" {
-	//	return ErrEmptyKeyPath
-	//} else if c.CommFilePath == "" {
-	//	return ErrEmptyCommPath
-	//}
+func (c *Client) loadKeys() error {
+	if c.SignKeyFilePath == "" {
+		return ErrEmptyKeyPath
+	} else if c.CommFilePath == "" {
+		return ErrEmptyCommPath
+	}
 
 	// Parse current signing key
 	_, currkey, err := crypto.ParseKeyFile(c.SignKeyFilePath, true)
@@ -77,7 +86,7 @@ func (c *Config) loadKeys() error {
 
 func main() {
 	var err error
-	cnf := *DefaultConfig
+	cnf := *DefaultClient
 
 	flag.StringVar(&cnf.BindAddress, "addr", "127.0.0.1", "address to listen on")
 	flag.IntVar(&cnf.ListenPort, "p", 2416, "port to listen on")

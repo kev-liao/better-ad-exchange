@@ -32,7 +32,6 @@ type ReqType string
 var (
 	ISSUE  ReqType = "Issue"
 	REDEEM ReqType = "Redeem"
-	BID    ReqType = "Bid"
 )
 
 // EncodeByteArrays turns [][]byte into JSON with base64-encoded byte blobs.

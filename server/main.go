@@ -122,16 +122,6 @@ func (c *Server) handle(conn *net.TCPConn) error {
 			return err
 		}
 		return nil
-    // XXX: My addition
-	case btd.BID:
-		metrics.CounterBidTotal.Inc()
-		err = btd.HandleBid(conn, wrapped.Host, wrapped.Path)
-		if err != nil {
-			metrics.CounterBidError.Inc()
-			conn.Write([]byte(err.Error()))
-			return err
-		}		
-		return nil
 	default:
 		errLog.Printf("unrecognized request type \"%s\"", request.Type)
 		metrics.CounterUnknownRequestType.Inc()

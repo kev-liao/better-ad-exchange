@@ -1,8 +1,8 @@
 package main
 
 import (
+	"encoding/base64"	
 	"encoding/json"
-	"errors"	
 	"flag"	
 	"fmt"
 	"io/ioutil"
@@ -15,132 +15,16 @@ import (
 	"github.com/kev-liao/challenge-bypass-server/crypto"
 )
 
-var (
-	Version         = "dev"
+var	errLog *log.Logger = log.New(os.Stderr, "[advertiser] ", log.LstdFlags|log.Lshortfile)
 
-	ErrEmptyKeyPath        = errors.New("key file path is empty")
-	ErrRequestTooLarge     = errors.New("request too large to process")
-	ErrEmptyCommPath = errors.New("no commitment file path specified")
-
-	errLog *log.Logger = log.New(os.Stderr, "[btd] ", log.LstdFlags|log.Lshortfile)
-)
-
-type Client struct {
-	BindAddress        string `json:"bind_address,omitempty"`
-	ListenPort         int    `json:"listen_port,omitempty"`
-	MetricsPort        int    `json:"metrics_port,omitempty"`
-	MaxTokens          int    `json:"max_tokens,omitempty"`
-	SignKeyFilePath    string `json:"key_file_path"`
-	RedeemKeysFilePath string `json:"redeem_keys_file_path"`	
-	CommFilePath       string `json:"comm_file_path"`
-
-	signKey    []byte        // a big-endian marshaled big.Int representing an elliptic curve scalar for the current signing key
-	redeemKeys [][]byte      // current signing key + all old keys
-	G          *crypto.Point // elliptic curve point representation of generator G
-	H          *crypto.Point // elliptic curve point representation of commitment H to signing key
-	keyVersion string        // the version of the key that is used
-}
-
-var DefaultClient = &Client{
-	BindAddress: "127.0.0.1",
-	ListenPort:  2416,
-	MetricsPort: 2417,
-	MaxTokens:   100,
-}
-
-func wrapTokenRequest(req *btd.BlindTokenRequest) *btd.BlindTokenRequestWrapper {
-	encoded, _ := btd.MarshalRequest(req)
-	wrappedRequest := &btd.BlindTokenRequestWrapper{
-		Request: encoded,
-	}
-	return wrappedRequest
-}
-
-func (c *Client) loadKeys() error {
-	if c.SignKeyFilePath == "" {
-		return ErrEmptyKeyPath
-	} else if c.CommFilePath == "" {
-		return ErrEmptyCommPath
-	}
-
-	// Parse current signing key
-	_, currkey, err := crypto.ParseKeyFile(c.SignKeyFilePath, true)
-	if err != nil {
-		return err
-	}
-	c.signKey = currkey[0]
-	c.redeemKeys = append(c.redeemKeys, c.signKey)
-
-	// optionally parse old keys that are valid for redemption
-	if c.RedeemKeysFilePath != "" {
-		errLog.Println("Adding extra keys for verifying token redemptions")
-		_, oldKeys, err := crypto.ParseKeyFile(c.RedeemKeysFilePath, false)
-		if err != nil {
-			return err
-		}
-		c.redeemKeys = append(c.redeemKeys, oldKeys...)
-	}
-
-	return nil
-}
-
-func main() {
-	var err error
-	cnf := *DefaultClient
-
-	flag.StringVar(&cnf.BindAddress, "addr", "127.0.0.1", "address to listen on")
-	flag.IntVar(&cnf.ListenPort, "p", 2416, "port to listen on")
-	flag.IntVar(&cnf.MetricsPort, "m", 2417, "metrics port")	
-	flag.IntVar(&cnf.MaxTokens, "maxtokens", 100, "maximum number of tokens issued per request")
-	flag.StringVar(&cnf.SignKeyFilePath, "key", "", "path to the current secret key file for signing tokens")
-	flag.StringVar(&cnf.CommFilePath, "comm", "", "path to the commitment file")
-	flag.StringVar(&cnf.keyVersion, "keyversion", "1.0", "version sent to the client for choosing consistent key commitments for proof verification")
-	flag.Parse()
-	
-	if cnf.SignKeyFilePath == "" || cnf.CommFilePath == "" {
-		flag.Usage()
-		return
-	}
-
-	err = cnf.loadKeys()
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}
-
-	// Get bytes for public commitment to private key
-	GBytes, HBytes, err := crypto.ParseCommitmentFile(cnf.CommFilePath)
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}
-	
-	// Retrieve the actual elliptic curve points for the commitment
-	// The commitment should match the current key that is being used for
-	// signing
-	//
-	// We only support curve point commitments for P256-SHA256
-	cnf.G, cnf.H, err = crypto.RetrieveCommPoints(GBytes, HBytes, cnf.signKey)
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}
-	
-	cp := &crypto.CurveParams{Curve: "p256", Hash: "sha256", Method: "swu"}
-	h2cObj, err := cp.GetH2CObj()
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}
-	
-	tokens := make([][]byte, 10)
-	bF := make([][]byte, len(tokens))
-	bP := make([]*crypto.Point, len(tokens))
-	for i := 0; i < len(tokens); i++ {
+func generateTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, error) {
+	tokens := make([][]byte, numTokens)
+	bF := make([][]byte, numTokens)
+	bP := make([]*crypto.Point, numTokens)
+	for i := 0; i < numTokens; i++ {
 		token, bPoint, bFactor, err := crypto.CreateBlindToken(h2cObj)
 		if err != nil {
-			errLog.Fatal(err)			
-			return
+			return nil, err
 		}
 		tokens[i] = token
 		bP[i] = bPoint
@@ -148,8 +32,7 @@ func main() {
 	}
 	marshaledTokenList, err := crypto.BatchMarshalPoints(bP)
 	if err != nil {
-		errLog.Fatal(err)
-		return
+		return nil, err
 	}
 
 	request := &btd.BlindTokenRequest{
@@ -157,31 +40,115 @@ func main() {
 		Contents: marshaledTokenList,
 	}
 
-	wrapped := wrapTokenRequest(request)
-	jsonReq, err := json.Marshal(wrapped)
+	encoded, _ := btd.MarshalRequest(request)
+	wrappedRequest := &btd.BlindTokenRequestWrapper{
+		Request: encoded,
+	}
+	
+	requestBytes, err := json.Marshal(wrappedRequest)
 	if err != nil {
-		errLog.Fatal(err)
-		return
+		return nil, err
 	}	
 	
-	CONNECT := fmt.Sprintf("%s:%s", cnf.BindAddress, strconv.Itoa(cnf.ListenPort))
+	return requestBytes, nil
+}
+
+func main() {
+	var err error
+	var address string
+	//var commFilePath string	
+	var port, numTokens int
+
+	flag.StringVar(&address, "addr", "127.0.0.1", "address to send to")
+	flag.IntVar(&port, "p", 2416, "port to send on")
+	flag.IntVar(&numTokens, "n", 10, "number of tokens to request")
+	//flag.StringVar(&commFilePath, "comm", "", "path to the commitment file")	
+	flag.Parse()
+
+	//GBytes, HBytes, err := crypto.ParseCommitmentFile(commFilePath)
+	//if err != nil {
+	//	errLog.Fatal(err)
+	//	return
+	//}
+	//
+	//G, H, err = crypto.RetrieveCommPoints(GBytes, HBytes, cnf.signKey)
+	//if err != nil {
+	//	errLog.Fatal(err)
+	//	return
+	//}	
 	
-	c, err := net.Dial("tcp", CONNECT)
+	cp := &crypto.CurveParams{Curve: "p256", Hash: "sha256", Method: "swu"}
+	h2cObj, err := cp.GetH2CObj()
 	if err != nil {
 		errLog.Fatal(err)
 		return
 	}
 
-	_, err = c.Write(jsonReq)
-
-	reply, err := ioutil.ReadAll(c)
+	requestBytes, err := generateTokenRequest(h2cObj, numTokens)
+	if err != nil {
+		errLog.Fatal(err)
+		return
+	}	
 	
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", address, strconv.Itoa(port)))
+	if err != nil {
+		errLog.Fatal(err)
+		return
+	}
+
+	_, err = conn.Write(requestBytes)
     if err != nil {
 		errLog.Fatal(err)
 		return		
     }
-	
-	fmt.Println(string(reply))
+
+	encodedResponse, err := ioutil.ReadAll(conn)
+    if err != nil {
+		errLog.Fatal(err)
+		return		
+    }
+
+	responseBytes := make([]byte, base64.StdEncoding.DecodedLen(len(encodedResponse)))
+	n, err := base64.StdEncoding.Decode(responseBytes, encodedResponse)
+    if err != nil {
+		errLog.Fatal(err)
+		return		
+    }	
+	fmt.Println(n)
+
+	response := &btd.IssuedTokenResponse{}
+	err = json.Unmarshal(responseBytes[:n], response)
+	if err != nil {
+		errLog.Fatal(err)
+		return
+	}
+
+	marshaledPoints, marshaledBP := response.Sigs, response.Proof
+	//xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), marshaledPoints)
+	_, err = crypto.BatchUnmarshalPoints(h2cObj.Curve(), marshaledPoints)	
+	if err != nil {
+		errLog.Fatal(err)
+		return
+	}
+
+	dleq, err := crypto.UnmarshalBatchProof(h2cObj.Curve(), marshaledBP)
+	if err != nil {
+		errLog.Fatal(err)
+		return
+	}
+	fmt.Println(dleq)
+	//dleq.G = G
+	//dleq.H = H
+	//Q := signTokens(bP, x)
+	//dleq.M, dleq.Z, err = recomputeComposites(G, H, bP, Q, h2cObj.Hash(), h2cObj.Curve())
+	//if err != nil {
+	//	errLog.Fatal(err)
+	//	return
+	//}
+	//if !dleq.Verify() {
+	//	errLog.Fatal(err)
+	//	return
+	//}
 	
 	return
 }

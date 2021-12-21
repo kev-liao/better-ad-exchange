@@ -1,8 +1,11 @@
 package main
 
 import (
+	stdcrypto "crypto"	
+	"crypto/elliptic"	
 	"encoding/base64"	
 	"encoding/json"
+	"errors"	
 	"flag"	
 	"fmt"
 	"io/ioutil"
@@ -17,14 +20,14 @@ import (
 
 var	errLog *log.Logger = log.New(os.Stderr, "[advertiser] ", log.LstdFlags|log.Lshortfile)
 
-func generateTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, error) {
+func generateTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, [][]byte, []*crypto.Point, [][]byte,error) {
 	tokens := make([][]byte, numTokens)
 	bF := make([][]byte, numTokens)
 	bP := make([]*crypto.Point, numTokens)
 	for i := 0; i < numTokens; i++ {
 		token, bPoint, bFactor, err := crypto.CreateBlindToken(h2cObj)
 		if err != nil {
-			return nil, err
+			return nil, nil, nil, nil, err
 		}
 		tokens[i] = token
 		bP[i] = bPoint
@@ -32,7 +35,7 @@ func generateTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, error
 	}
 	marshaledTokenList, err := crypto.BatchMarshalPoints(bP)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	request := &btd.BlindTokenRequest{
@@ -47,35 +50,47 @@ func generateTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, error
 	
 	requestBytes, err := json.Marshal(wrappedRequest)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, nil, err
 	}	
 	
-	return requestBytes, nil
+	return requestBytes, tokens, bP, bF, nil
+}
+
+func recomputeComposites(G, Y *crypto.Point, P, Q []*crypto.Point, hash stdcrypto.Hash, curve elliptic.Curve) (*crypto.Point, *crypto.Point, error) {
+	compositeM, compositeZ, _, err := crypto.ComputeComposites(hash, curve, G, Y, P, Q)
+	return compositeM, compositeZ, err
 }
 
 func main() {
 	var err error
 	var address string
-	//var commFilePath string	
+	var commFilePath string	
 	var port, numTokens int
 
 	flag.StringVar(&address, "addr", "127.0.0.1", "address to send to")
 	flag.IntVar(&port, "p", 2416, "port to send on")
 	flag.IntVar(&numTokens, "n", 10, "number of tokens to request")
-	//flag.StringVar(&commFilePath, "comm", "", "path to the commitment file")	
+	flag.StringVar(&commFilePath, "comm", "", "path to the commitment file")	
 	flag.Parse()
 
-	//GBytes, HBytes, err := crypto.ParseCommitmentFile(commFilePath)
-	//if err != nil {
-	//	errLog.Fatal(err)
-	//	return
-	//}
-	//
-	//G, H, err = crypto.RetrieveCommPoints(GBytes, HBytes, cnf.signKey)
-	//if err != nil {
-	//	errLog.Fatal(err)
-	//	return
-	//}	
+	GBytes, HBytes, err := crypto.ParseCommitmentFile(commFilePath)
+	if err != nil {
+		errLog.Fatal(err)
+		return
+	}
+
+	G := &crypto.Point{Curve: elliptic.P256(), X: nil, Y: nil}
+	err = G.Unmarshal(G.Curve, GBytes)
+	if err != nil {
+		errLog.Fatal(err)
+		return		
+	}
+	H := &crypto.Point{Curve: elliptic.P256(), X: nil, Y: nil}
+	err = H.Unmarshal(H.Curve, HBytes)
+	if err != nil {
+		errLog.Fatal(err)
+		return
+	}	
 	
 	cp := &crypto.CurveParams{Curve: "p256", Hash: "sha256", Method: "swu"}
 	h2cObj, err := cp.GetH2CObj()
@@ -84,7 +99,12 @@ func main() {
 		return
 	}
 
-	requestBytes, err := generateTokenRequest(h2cObj, numTokens)
+	//request, tokens, bP, bF, err := makeTokenIssueRequest(h2cObj)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	requestBytes, _, bP, _, err := generateTokenRequest(h2cObj, numTokens)
 	if err != nil {
 		errLog.Fatal(err)
 		return
@@ -114,8 +134,6 @@ func main() {
 		errLog.Fatal(err)
 		return		
     }	
-	fmt.Println(n)
-
 	response := &btd.IssuedTokenResponse{}
 	err = json.Unmarshal(responseBytes[:n], response)
 	if err != nil {
@@ -124,8 +142,7 @@ func main() {
 	}
 
 	marshaledPoints, marshaledBP := response.Sigs, response.Proof
-	//xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), marshaledPoints)
-	_, err = crypto.BatchUnmarshalPoints(h2cObj.Curve(), marshaledPoints)	
+	xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), marshaledPoints)
 	if err != nil {
 		errLog.Fatal(err)
 		return
@@ -136,19 +153,13 @@ func main() {
 		errLog.Fatal(err)
 		return
 	}
-	fmt.Println(dleq)
-	//dleq.G = G
-	//dleq.H = H
-	//Q := signTokens(bP, x)
-	//dleq.M, dleq.Z, err = recomputeComposites(G, H, bP, Q, h2cObj.Hash(), h2cObj.Curve())
-	//if err != nil {
-	//	errLog.Fatal(err)
-	//	return
-	//}
-	//if !dleq.Verify() {
-	//	errLog.Fatal(err)
-	//	return
-	//}
+	dleq.G = G
+	dleq.H = H
+	dleq.M, dleq.Z, err = recomputeComposites(G, H, bP, xbP, h2cObj.Hash(), h2cObj.Curve())
+	if !dleq.Verify() {
+		errLog.Fatal(errors.New("Batch proof failed to verify"))
+		return
+	}	
 	
 	return
 }

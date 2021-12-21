@@ -9,8 +9,7 @@ import (
 // { bl_sig_req : b64-encoded request from client }
 type BlindTokenRequestWrapper struct {
 	Request []byte `json:"bl_sig_req"`
-	Host    string `json:"host,omitempty"`
-	Path    string `json:"http,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 // { type : (Issue|Redeem), contents : list of b64-encoded blinded points }

@@ -114,7 +114,7 @@ func ApproveTokens(req BlindTokenRequest, key []byte, keyVersion string, G, H *c
 // are ever used to sign the token so we can rotate private key easily
 // It also checks for double-spend. Returns nil on success and an
 // error on failure.
-func RedeemToken(req BlindTokenRequest, host, path []byte, keys [][]byte) error {
+func RedeemToken(req BlindTokenRequest, message []byte, keys [][]byte) error {
 	// If the length is 3 then the curve parameters are provided by the client
 	token, requestBinder := req.Contents[0], req.Contents[1]
 	curveParams, err := getClientCurveParams(req.Contents)
@@ -130,7 +130,7 @@ func RedeemToken(req BlindTokenRequest, host, path []byte, keys [][]byte) error 
 	if err != nil {
 		return err
 	}
-	requestData := [][]byte{host, path}
+	requestData := [][]byte{message}
 
 	var valid bool
 	for _, key := range keys {
@@ -144,7 +144,7 @@ func RedeemToken(req BlindTokenRequest, host, path []byte, keys [][]byte) error 
 
 	if !valid {
 		metrics.CounterRedeemErrorVerify.Inc()
-		return fmt.Errorf("%s, host: %s, path: %s, token: %v, request_binder: %v", ErrInvalidMAC.Error(), host, path, new(big.Int).SetBytes(token), new(big.Int).SetBytes(requestBinder))
+		return fmt.Errorf("%s, message: %s, token: %v, request_binder: %v", ErrInvalidMAC.Error(), message, new(big.Int).SetBytes(token), new(big.Int).SetBytes(requestBinder))
 	}
 
 	doubleSpent := SpentTokens.CheckToken(token)
@@ -207,7 +207,7 @@ func HandleIssue(conn *net.TCPConn, req BlindTokenRequest, key []byte, keyVersio
 // "success" back to the supplied connection and add the token preimage to a
 // double-spend ledger. Internal semantics are still return nil on success,
 // caller closes the connection.
-func HandleRedeem(conn *net.TCPConn, req BlindTokenRequest, host, path string, keys [][]byte) error {
+func HandleRedeem(conn *net.TCPConn, req BlindTokenRequest, message string, keys [][]byte) error {
 	if req.Type != REDEEM {
 		metrics.CounterRedeemErrorFormat.Inc()
 		return ErrUnexpectedRequestType
@@ -223,7 +223,7 @@ func HandleRedeem(conn *net.TCPConn, req BlindTokenRequest, host, path string, k
 
 	// transform request data here if necessary
 
-	err := RedeemToken(req, []byte(host), []byte(path), keys)
+	err := RedeemToken(req, []byte(message), keys)
 	if err != nil {
 		return err
 	}

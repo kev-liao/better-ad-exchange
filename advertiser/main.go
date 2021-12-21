@@ -19,8 +19,7 @@ import (
 )
 
 var	(
-	testHost = []byte("example.com")
-	testPath = []byte("/index.html")
+	testMessage = []byte("test")
 	
 	ErrInvalidProof    = errors.New("Batch proof failed to verify")	
 	errLog *log.Logger = log.New(os.Stderr, "[advertiser] ", log.LstdFlags|log.Lshortfile)
@@ -72,8 +71,6 @@ func makeTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, [][]byte,
 	encoded, _ := btd.MarshalRequest(request)
 	wrappedRequest := &btd.BlindTokenRequestWrapper{
 		Request: encoded,
-		Host: string(testHost),
-		Path: string(testPath),
 	}
 	
 	requestBytes, err := json.Marshal(wrappedRequest)
@@ -180,7 +177,7 @@ func main() {
 	// Token redemption
 	xT := crypto.UnblindPoint(xbP[0], bF[0])
 	sk := crypto.DeriveKey(h2cObj.Hash(), xT, tokens[0])
-	reqData := [][]byte{testHost, testPath}
+	reqData := [][]byte{testMessage}
 	reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, reqData)
 	contents := [][]byte{tokens[0], reqBinder}
 	h2cParamsBytes, err := json.Marshal(cp)
@@ -197,8 +194,7 @@ func main() {
 	encoded, _ := btd.MarshalRequest(redeemRequest)
 	wrappedRequest := &btd.BlindTokenRequestWrapper{
 		Request: encoded,
-		Host: string(testHost),
-		Path: string(testPath),
+		Message: string(testMessage),
 	}
 	
 	requestBytes, err = json.Marshal(wrappedRequest)

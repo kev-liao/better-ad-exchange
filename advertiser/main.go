@@ -19,8 +19,6 @@ import (
 )
 
 var	(
-	testMessage = []byte("test")
-	
 	ErrInvalidProof    = errors.New("Batch proof failed to verify")	
 	errLog *log.Logger = log.New(os.Stderr, "[advertiser] ", log.LstdFlags|log.Lshortfile)
 )
@@ -125,7 +123,7 @@ func main() {
 		return
 	}
 
-	requestBytes, tokens, bP, bF, err := makeTokenRequest(h2cObj, numTokens)
+	requestBytes, _, bP, _, err := makeTokenRequest(h2cObj, numTokens)
 	if err != nil {
 		errLog.Fatal(err)
 		return
@@ -173,55 +171,6 @@ func main() {
 		errLog.Fatal(ErrInvalidProof)
 		return
 	}
-
-	// Token redemption
-	xT := crypto.UnblindPoint(xbP[0], bF[0])
-	sk := crypto.DeriveKey(h2cObj.Hash(), xT, tokens[0])
-	reqData := [][]byte{testMessage}
-	reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, reqData)
-	contents := [][]byte{tokens[0], reqBinder}
-	h2cParamsBytes, err := json.Marshal(cp)
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}
-	contents = append(contents, h2cParamsBytes)
-	redeemRequest := &btd.BlindTokenRequest{
-		Type:     "Redeem",
-		Contents: contents,
-	}
-
-	encoded, _ := btd.MarshalRequest(redeemRequest)
-	wrappedRequest := &btd.BlindTokenRequestWrapper{
-		Request: encoded,
-		Message: string(testMessage),
-	}
-	
-	requestBytes, err = json.Marshal(wrappedRequest)
-	if err != nil {
-		errLog.Fatal(err)
-		return		
-	}
-
-	conn, err = net.Dial("tcp", fmt.Sprintf("%s:%s", address, strconv.Itoa(port)))
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}	
-
-	_, err = conn.Write(requestBytes)
-    if err != nil {
-		errLog.Fatal(err)
-		return		
-    }
-
-	redeemResponse, err := ioutil.ReadAll(conn)
-    if err != nil {
-		errLog.Fatal(err)
-		return		
-    }	
-
-	fmt.Println(string(redeemResponse))
 	
 	return
 }

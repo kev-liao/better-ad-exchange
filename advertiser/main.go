@@ -18,9 +18,35 @@ import (
 	"github.com/kev-liao/challenge-bypass-server/crypto"
 )
 
-var	errLog *log.Logger = log.New(os.Stderr, "[advertiser] ", log.LstdFlags|log.Lshortfile)
+var	(
+	testHost = []byte("example.com")
+	testPath = []byte("/index.html")
+	
+	ErrInvalidProof    = errors.New("Batch proof failed to verify")	
+	errLog *log.Logger = log.New(os.Stderr, "[advertiser] ", log.LstdFlags|log.Lshortfile)
+)
 
-func generateTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, [][]byte, []*crypto.Point, [][]byte,error) {
+func getCommPoints(commFilePath string) (*crypto.Point, *crypto.Point, error) {
+	GBytes, HBytes, err := crypto.ParseCommitmentFile(commFilePath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	G := &crypto.Point{Curve: elliptic.P256(), X: nil, Y: nil}
+	err = G.Unmarshal(G.Curve, GBytes)
+	if err != nil {
+		return nil, nil, err
+	}
+	H := &crypto.Point{Curve: elliptic.P256(), X: nil, Y: nil}
+	err = H.Unmarshal(H.Curve, HBytes)
+	if err != nil {
+		return nil, nil, err
+	}
+	
+	return G, H, nil
+}
+
+func makeTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, [][]byte, []*crypto.Point, [][]byte, error) {
 	tokens := make([][]byte, numTokens)
 	bF := make([][]byte, numTokens)
 	bP := make([]*crypto.Point, numTokens)
@@ -46,6 +72,8 @@ func generateTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, [][]b
 	encoded, _ := btd.MarshalRequest(request)
 	wrappedRequest := &btd.BlindTokenRequestWrapper{
 		Request: encoded,
+		Host: string(testHost),
+		Path: string(testPath),
 	}
 	
 	requestBytes, err := json.Marshal(wrappedRequest)
@@ -54,6 +82,20 @@ func generateTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, [][]b
 	}	
 	
 	return requestBytes, tokens, bP, bF, nil
+}
+
+func decodeTokenResponse(encodedResponse []byte) (*btd.IssuedTokenResponse, error) {
+	responseBytes := make([]byte, base64.StdEncoding.DecodedLen(len(encodedResponse)))
+	n, err := base64.StdEncoding.Decode(responseBytes, encodedResponse)
+    if err != nil {
+		return nil, err
+    }	
+	response := &btd.IssuedTokenResponse{}
+	err = json.Unmarshal(responseBytes[:n], response)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 func recomputeComposites(G, Y *crypto.Point, P, Q []*crypto.Point, hash stdcrypto.Hash, curve elliptic.Curve) (*crypto.Point, *crypto.Point, error) {
@@ -73,20 +115,7 @@ func main() {
 	flag.StringVar(&commFilePath, "comm", "", "path to the commitment file")	
 	flag.Parse()
 
-	GBytes, HBytes, err := crypto.ParseCommitmentFile(commFilePath)
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}
-
-	G := &crypto.Point{Curve: elliptic.P256(), X: nil, Y: nil}
-	err = G.Unmarshal(G.Curve, GBytes)
-	if err != nil {
-		errLog.Fatal(err)
-		return		
-	}
-	H := &crypto.Point{Curve: elliptic.P256(), X: nil, Y: nil}
-	err = H.Unmarshal(H.Curve, HBytes)
+	G, H, err := getCommPoints(commFilePath)
 	if err != nil {
 		errLog.Fatal(err)
 		return
@@ -99,12 +128,7 @@ func main() {
 		return
 	}
 
-	//request, tokens, bP, bF, err := makeTokenIssueRequest(h2cObj)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	requestBytes, _, bP, _, err := generateTokenRequest(h2cObj, numTokens)
+	requestBytes, tokens, bP, bF, err := makeTokenRequest(h2cObj, numTokens)
 	if err != nil {
 		errLog.Fatal(err)
 		return
@@ -128,27 +152,19 @@ func main() {
 		return		
     }
 
-	responseBytes := make([]byte, base64.StdEncoding.DecodedLen(len(encodedResponse)))
-	n, err := base64.StdEncoding.Decode(responseBytes, encodedResponse)
-    if err != nil {
+	response, err := decodeTokenResponse(encodedResponse)
+	if err != nil {
 		errLog.Fatal(err)
-		return		
-    }	
-	response := &btd.IssuedTokenResponse{}
-	err = json.Unmarshal(responseBytes[:n], response)
+		return
+	}	
+
+	xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), response.Sigs)
 	if err != nil {
 		errLog.Fatal(err)
 		return
 	}
 
-	marshaledPoints, marshaledBP := response.Sigs, response.Proof
-	xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), marshaledPoints)
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}
-
-	dleq, err := crypto.UnmarshalBatchProof(h2cObj.Curve(), marshaledBP)
+	dleq, err := crypto.UnmarshalBatchProof(h2cObj.Curve(), response.Proof)
 	if err != nil {
 		errLog.Fatal(err)
 		return
@@ -157,9 +173,59 @@ func main() {
 	dleq.H = H
 	dleq.M, dleq.Z, err = recomputeComposites(G, H, bP, xbP, h2cObj.Hash(), h2cObj.Curve())
 	if !dleq.Verify() {
-		errLog.Fatal(errors.New("Batch proof failed to verify"))
+		errLog.Fatal(ErrInvalidProof)
+		return
+	}
+
+	// Token redemption
+	xT := crypto.UnblindPoint(xbP[0], bF[0])
+	sk := crypto.DeriveKey(h2cObj.Hash(), xT, tokens[0])
+	reqData := [][]byte{testHost, testPath}
+	reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, reqData)
+	contents := [][]byte{tokens[0], reqBinder}
+	h2cParamsBytes, err := json.Marshal(cp)
+	if err != nil {
+		errLog.Fatal(err)
+		return
+	}
+	contents = append(contents, h2cParamsBytes)
+	redeemRequest := &btd.BlindTokenRequest{
+		Type:     "Redeem",
+		Contents: contents,
+	}
+
+	encoded, _ := btd.MarshalRequest(redeemRequest)
+	wrappedRequest := &btd.BlindTokenRequestWrapper{
+		Request: encoded,
+		Host: string(testHost),
+		Path: string(testPath),
+	}
+	
+	requestBytes, err = json.Marshal(wrappedRequest)
+	if err != nil {
+		errLog.Fatal(err)
+		return		
+	}
+
+	conn, err = net.Dial("tcp", fmt.Sprintf("%s:%s", address, strconv.Itoa(port)))
+	if err != nil {
+		errLog.Fatal(err)
 		return
 	}	
+
+	_, err = conn.Write(requestBytes)
+    if err != nil {
+		errLog.Fatal(err)
+		return		
+    }
+
+	redeemResponse, err := ioutil.ReadAll(conn)
+    if err != nil {
+		errLog.Fatal(err)
+		return		
+    }	
+
+	fmt.Println(string(redeemResponse))
 	
 	return
 }

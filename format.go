@@ -4,6 +4,12 @@ import (
 	"encoding/json"
 )
 
+type UnspentTokens struct {
+	Headers         [][]byte
+	BlindingFactors [][]byte
+	SignedTokens    [][]byte
+}
+
 // This is a transport format induced by internal systems. It should be
 // irrelevant to third-party implementations.
 // { bl_sig_req : b64-encoded request from client }

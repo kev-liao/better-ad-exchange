@@ -23,12 +23,6 @@ var	(
 	errLog *log.Logger = log.New(os.Stderr, "[advertiser] ", log.LstdFlags|log.Lshortfile)
 )
 
-type UnspentTokens struct {
-	Headers         [][]byte
-	BlindingFactors [][]byte
-	SignedTokens    []*crypto.Point
-}
-
 func getCommPoints(commFilePath string) (*crypto.Point, *crypto.Point, error) {
 	GBytes, HBytes, err := crypto.ParseCommitmentFile(commFilePath)
 	if err != nil {
@@ -106,14 +100,14 @@ func recomputeComposites(G, Y *crypto.Point, P, Q []*crypto.Point, hash stdcrypt
 
 func main() {
 	var err error
-	var address, commFilePath, outFilePath string
+	var address, commFilePath, tokenFilePath string
 	var port, numTokens int
 
 	flag.StringVar(&address, "addr", "127.0.0.1", "address to send to")
 	flag.IntVar(&port, "p", 2416, "port to send on")
 	flag.IntVar(&numTokens, "n", 10, "number of tokens to request")
 	flag.StringVar(&commFilePath, "comm", "", "path to the commitment file")
-	flag.StringVar(&outFilePath, "out", "", "path to the output file")
+	flag.StringVar(&tokenFilePath, "out", "", "path to the token file")
 	flag.Parse()
 
 	G, H, err := getCommPoints(commFilePath)
@@ -178,7 +172,7 @@ func main() {
 		return
 	}
 
-	unspentTokens := &UnspentTokens{Headers: tokens, BlindingFactors: bF, SignedTokens: xbP}
+	unspentTokens := &btd.UnspentTokens{Headers: tokens, BlindingFactors: bF, SignedTokens: response.Sigs}
 
 	file, err := json.MarshalIndent(unspentTokens, "", " ")
 	if err != nil {
@@ -186,7 +180,7 @@ func main() {
 		return
 	}	
 
-	err = ioutil.WriteFile(outFilePath, file, 0644)
+	err = ioutil.WriteFile(tokenFilePath, file, 0644)
 	if err != nil {
 		errLog.Fatal(err)
 		return

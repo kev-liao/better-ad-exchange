@@ -184,7 +184,9 @@ func main() {
 	if err != nil {
 		errLog.Fatal(err)
 		return
-	}	
+	}
+
+	// TODO: Make tokens from unspentTokens
 	
 	return
 }

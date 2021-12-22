@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/elliptic"	
 	"encoding/json"
 	"flag"	
 	"fmt"
@@ -20,26 +19,6 @@ var	(
 	errLog *log.Logger = log.New(os.Stderr, "[publisher] ", log.LstdFlags|log.Lshortfile)
 )
 
-func getCommPoints(commFilePath string) (*crypto.Point, *crypto.Point, error) {
-	GBytes, HBytes, err := crypto.ParseCommitmentFile(commFilePath)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	G := &crypto.Point{Curve: elliptic.P256(), X: nil, Y: nil}
-	err = G.Unmarshal(G.Curve, GBytes)
-	if err != nil {
-		return nil, nil, err
-	}
-	H := &crypto.Point{Curve: elliptic.P256(), X: nil, Y: nil}
-	err = H.Unmarshal(H.Curve, HBytes)
-	if err != nil {
-		return nil, nil, err
-	}
-	
-	return G, H, nil
-}
-
 func main() {
 	var err error
 	var address string
@@ -51,12 +30,6 @@ func main() {
 	flag.IntVar(&numTokens, "n", 10, "number of tokens to request")
 	flag.StringVar(&commFilePath, "comm", "", "path to the commitment file")	
 	flag.Parse()
-
-	G, H, err := getCommPoints(commFilePath)
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}	
 	
 	cp := &crypto.CurveParams{Curve: "p256", Hash: "sha256", Method: "swu"}
 	h2cObj, err := cp.GetH2CObj()

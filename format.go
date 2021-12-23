@@ -22,6 +22,7 @@ type BlindTokenRequestWrapper struct {
 type BlindTokenRequest struct {
 	Type     ReqType  `json:"type"`
 	Contents [][]byte `json:"contents"`
+	Denom    int      `json:"denom"`
 }
 
 // Contains response to Issue request

@@ -109,8 +109,8 @@ func (c *Server) handle(conn *net.TCPConn) error {
 	switch request.Type {
 	case btd.ISSUE:
 		metrics.CounterIssueTotal.Inc()
-		// TODO: Denomination
-		err = btd.HandleIssue(conn, request, c.signKeys[0], c.keyVersion, c.G[0], c.H[0], c.MaxTokens)
+		i := request.Denom
+		err = btd.HandleIssue(conn, request, c.signKeys[i], c.keyVersion, c.G[i], c.H[i], c.MaxTokens)
 		if err != nil {
 			metrics.CounterIssueError.Inc()
 			return err
@@ -132,35 +132,6 @@ func (c *Server) handle(conn *net.TCPConn) error {
 	}
 }
 
-// loadKeys loads a signing key and optionally loads a file containing old keys for redemption validation
-//func (c *Server) loadKeys() error {
-//	if c.SignKeyFilePath == "" {
-//		return ErrEmptyKeyPath
-//	} else if c.CommFilePath == "" {
-//		return ErrEmptyCommPath
-//	}
-//
-//	// Parse current signing key
-//	_, currkey, err := crypto.ParseKeyFile(c.SignKeyFilePath, true)
-//	if err != nil {
-//		return err
-//	}
-//	c.signKey = currkey[0]
-//	c.redeemKeys = append(c.redeemKeys, c.signKey)
-//
-//	// optionally parse old keys that are valid for redemption
-//	if c.RedeemKeysFilePath != "" {
-//		errLog.Println("Adding extra keys for verifying token redemptions")
-//		_, oldKeys, err := crypto.ParseKeyFile(c.RedeemKeysFilePath, false)
-//		if err != nil {
-//			return err
-//		}
-//		c.redeemKeys = append(c.redeemKeys, oldKeys...)
-//	}
-//
-//	return nil
-//}
-
 func find(root, ext string) []string {
    var a []string
    filepath.WalkDir(root, func(s string, d fs.DirEntry, e error) error {
@@ -173,6 +144,7 @@ func find(root, ext string) []string {
    return a
 }
 
+// loadKeys loads a signing key and optionally loads a file containing old keys for redemption validation
 func (c *Server) loadKeys() error {
 	if c.SignKeyFilePath == "" {
 		return ErrEmptyKeyPath
@@ -187,6 +159,16 @@ func (c *Server) loadKeys() error {
 		}
 		c.signKeys = append(c.signKeys, currkey[0])
 		c.redeemKeys = append(c.redeemKeys, currkey[0])
+	}
+
+	// optionally parse old keys that are valid for redemption
+	if c.RedeemKeysFilePath != "" {
+		errLog.Println("Adding extra keys for verifying token redemptions")
+		_, oldKeys, err := crypto.ParseKeyFile(c.RedeemKeysFilePath, false)
+		if err != nil {
+			return err
+		}
+		c.redeemKeys = append(c.redeemKeys, oldKeys...)
 	}
 
 	return nil

@@ -133,6 +133,7 @@ func RedeemToken(req BlindTokenRequest, message []byte, keys [][]byte) error {
 	requestData := [][]byte{message}
 
 	var valid bool
+	// XXX: Can optimize here to choose correct key
 	for _, key := range keys {
 		sharedPoint := crypto.SignPoint(T, key)
 		sharedKey := crypto.DeriveKey(h2cObj.Hash(), sharedPoint, token)

@@ -43,7 +43,7 @@ func getCommPoints(commFilePath string) (*crypto.Point, *crypto.Point, error) {
 	return G, H, nil
 }
 
-func makeTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, [][]byte, []*crypto.Point, [][]byte, error) {
+func makeTokenRequest(h2cObj crypto.H2CObject, denom, numTokens int) ([]byte, [][]byte, []*crypto.Point, [][]byte, error) {
 	tokens := make([][]byte, numTokens)
 	bF := make([][]byte, numTokens)
 	bP := make([]*crypto.Point, numTokens)
@@ -64,6 +64,7 @@ func makeTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, [][]byte,
 	request := &btd.BlindTokenRequest{
 		Type:     "Issue",
 		Contents: marshaledTokenList,
+		Denom:    denom,
 	}
 
 	encoded, _ := btd.MarshalRequest(request)
@@ -101,10 +102,11 @@ func recomputeComposites(G, Y *crypto.Point, P, Q []*crypto.Point, hash stdcrypt
 func main() {
 	var err error
 	var address, commFilePath, tokenFilePath string
-	var port, numTokens int
+	var port, numTokens, denom int
 
 	flag.StringVar(&address, "addr", "127.0.0.1", "address to send to")
 	flag.IntVar(&port, "p", 2416, "port to send on")
+	flag.IntVar(&denom, "i", 0, "denomination of tokens to request")	
 	flag.IntVar(&numTokens, "n", 10, "number of tokens to request")
 	flag.StringVar(&commFilePath, "comm", "", "path to the commitment file")
 	flag.StringVar(&tokenFilePath, "out", "", "path to the token file")
@@ -123,7 +125,7 @@ func main() {
 		return
 	}
 
-	requestBytes, tokens, bP, bF, err := makeTokenRequest(h2cObj, numTokens)
+	requestBytes, tokens, bP, bF, err := makeTokenRequest(h2cObj, denom, numTokens)
 	if err != nil {
 		errLog.Fatal(err)
 		return

@@ -8,8 +8,10 @@ import (
 	"errors"	
 	"flag"	
 	"fmt"
+	"io/fs"		
 	"io/ioutil"
-	"log"	
+	"log"
+	"path/filepath"		
 	"net"
 	"os"
 	"strconv"	
@@ -99,98 +101,131 @@ func recomputeComposites(G, Y *crypto.Point, P, Q []*crypto.Point, hash stdcrypt
 	return compositeM, compositeZ, err
 }
 
+func find(root, ext string) []string {
+   var a []string
+   filepath.WalkDir(root, func(s string, d fs.DirEntry, e error) error {
+      if e != nil { return e }
+      if filepath.Ext(d.Name()) == ext {
+         a = append(a, s)
+      }
+      return nil
+   })
+   return a
+}
+
 func main() {
 	var err error
-	var address, commFilePath, tokenFilePath string
-	var port, numTokens, denom int
+	var address, commDir, denomFile, tokenFile string
+	var port int
 
 	flag.StringVar(&address, "addr", "127.0.0.1", "address to send to")
 	flag.IntVar(&port, "p", 2416, "port to send on")
-	flag.IntVar(&denom, "i", 0, "denomination of tokens to request")	
-	flag.IntVar(&numTokens, "n", 10, "number of tokens to request")
-	flag.StringVar(&commFilePath, "comm", "", "path to the commitment file")
-	flag.StringVar(&tokenFilePath, "out", "", "path to the token file")
+	flag.StringVar(&commDir, "comm", "", "path to the commitment file")
+	flag.StringVar(&denomFile, "denom", "", "path to the denom file")	
+	flag.StringVar(&tokenFile, "out", "", "path to the token file")
 	flag.Parse()
 
-	G, H, err := getCommPoints(commFilePath)
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}	
-	
+	Gs := []*crypto.Point{}
+	Hs := []*crypto.Point{}
+	for _, commFile := range find(commDir, ".comm") {
+		G, H, err := getCommPoints(commFile)
+		if err != nil {
+			errLog.Fatal(err)
+			return
+		}
+		Gs = append(Gs, G)
+		Hs = append(Hs, H)
+	}
+
 	cp := &crypto.CurveParams{Curve: "p256", Hash: "sha256", Method: "swu"}
 	h2cObj, err := cp.GetH2CObj()
 	if err != nil {
 		errLog.Fatal(err)
 		return
-	}
-
-	requestBytes, tokens, bP, bF, err := makeTokenRequest(h2cObj, denom, numTokens)
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}	
-	
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", address, strconv.Itoa(port)))
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}
-
-	_, err = conn.Write(requestBytes)
-    if err != nil {
-		errLog.Fatal(err)
-		return		
-    }
-
-	encodedResponse, err := ioutil.ReadAll(conn)
-    if err != nil {
-		errLog.Fatal(err)
-		return		
-    }
-
-	response, err := decodeTokenResponse(encodedResponse)
-	if err != nil {
-		errLog.Fatal(err)
-		return
 	}	
 
-	xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), response.Sigs)
+	file, err := ioutil.ReadFile(denomFile)
 	if err != nil {
 		errLog.Fatal(err)
 		return
 	}
 
-	dleq, err := crypto.UnmarshalBatchProof(h2cObj.Curve(), response.Proof)
+	var denoms map[int]int
+	err = json.Unmarshal([]byte(file), &denoms)
 	if err != nil {
 		errLog.Fatal(err)
 		return
 	}
-	dleq.G = G
-	dleq.H = H
-	dleq.M, dleq.Z, err = recomputeComposites(G, H, bP, xbP, h2cObj.Hash(), h2cObj.Curve())
-	if !dleq.Verify() {
-		errLog.Fatal(ErrInvalidProof)
-		return
-	}
 
-	unspentTokens := make([]*btd.UnspentToken, numTokens)
-	for i := 0; i < numTokens; i++ {
-		unspentTokens[i] = &btd.UnspentToken{
-			Denom: denom,
-			Header: tokens[i],
-			BlindingFactor: bF[i],
-			SignedToken: response.Sigs[i]}
+	var unspentToks = make(map[int][]*btd.UnspentToken)	
+	for denom, numTokens := range denoms {
+		requestBytes, tokens, bP, bF, err := makeTokenRequest(h2cObj, denom, numTokens)
+		if err != nil {
+			errLog.Fatal(err)
+			return
+		}	
 		
+		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", address, strconv.Itoa(port)))
+		if err != nil {
+			errLog.Fatal(err)
+			return
+		}
+
+		_, err = conn.Write(requestBytes)
+		if err != nil {
+			errLog.Fatal(err)
+			return
+		}
+
+		encodedResponse, err := ioutil.ReadAll(conn)
+		if err != nil {
+			errLog.Fatal(err)
+			return
+		}
+
+		response, err := decodeTokenResponse(encodedResponse)
+		if err != nil {
+			errLog.Fatal(err)
+			return
+		}	
+
+		xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), response.Sigs)
+		if err != nil {
+			errLog.Fatal(err)
+			return
+		}
+
+		dleq, err := crypto.UnmarshalBatchProof(h2cObj.Curve(), response.Proof)
+		if err != nil {
+			errLog.Fatal(err)
+			return
+		}
+		dleq.G = Gs[denom]
+		dleq.H = Hs[denom]
+		dleq.M, dleq.Z, err = recomputeComposites(Gs[denom], Hs[denom], bP, xbP, h2cObj.Hash(), h2cObj.Curve())
+		if !dleq.Verify() {
+			errLog.Fatal(ErrInvalidProof)
+			return
+		}
+
+		unspentTokens := make([]*btd.UnspentToken, numTokens)
+		for i := 0; i < numTokens; i++ {
+			unspentTokens[i] = &btd.UnspentToken{
+				Denom: denom,
+				Header: tokens[i],
+				BlindingFactor: bF[i],
+				SignedToken: response.Sigs[i]}
+		}
+		unspentToks[denom] = unspentTokens
 	}
 
-	file, err := json.MarshalIndent(unspentTokens, "", " ")
+	file, err = json.MarshalIndent(unspentToks, "", " ")
 	if err != nil {
 		errLog.Fatal(err)
 		return
 	}	
 
-	err = ioutil.WriteFile(tokenFilePath, file, 0644)
+	err = ioutil.WriteFile(tokenFile, file, 0644)
 	if err != nil {
 		errLog.Fatal(err)
 		return

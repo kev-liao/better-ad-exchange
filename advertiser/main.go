@@ -152,7 +152,7 @@ func main() {
 	response, err := decodeTokenResponse(encodedResponse)
 	if err != nil {
 		errLog.Fatal(err)
-	1	return
+		return
 	}	
 
 	xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), response.Sigs)

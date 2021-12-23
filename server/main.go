@@ -7,8 +7,10 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"	
 	"io/ioutil"
 	"log"
+	"path/filepath"		
 	"net"
 	"os"
 	"time"
@@ -42,10 +44,10 @@ type Server struct {
 	RedeemKeysFilePath string `json:"redeem_keys_file_path"`
 	CommFilePath       string `json:"comm_file_path"`
 
-	signKey    []byte        // a big-endian marshaled big.Int representing an elliptic curve scalar for the current signing key
+	signKeys   [][]byte      // a big-endian marshaled big.Int representing an elliptic curve scalar for the current signing key
 	redeemKeys [][]byte      // current signing key + all old keys
-	G          *crypto.Point // elliptic curve point representation of generator G
-	H          *crypto.Point // elliptic curve point representation of commitment H to signing key
+	G          []*crypto.Point // elliptic curve point representation of generator G
+	H          []*crypto.Point // elliptic curve point representation of commitment H to signing key
 	keyVersion string        // the version of the key that is used
 }
 
@@ -107,7 +109,8 @@ func (c *Server) handle(conn *net.TCPConn) error {
 	switch request.Type {
 	case btd.ISSUE:
 		metrics.CounterIssueTotal.Inc()
-		err = btd.HandleIssue(conn, request, c.signKey, c.keyVersion, c.G, c.H, c.MaxTokens)
+		// TODO: Denomination
+		err = btd.HandleIssue(conn, request, c.signKeys[0], c.keyVersion, c.G[0], c.H[0], c.MaxTokens)
 		if err != nil {
 			metrics.CounterIssueError.Inc()
 			return err
@@ -130,6 +133,46 @@ func (c *Server) handle(conn *net.TCPConn) error {
 }
 
 // loadKeys loads a signing key and optionally loads a file containing old keys for redemption validation
+//func (c *Server) loadKeys() error {
+//	if c.SignKeyFilePath == "" {
+//		return ErrEmptyKeyPath
+//	} else if c.CommFilePath == "" {
+//		return ErrEmptyCommPath
+//	}
+//
+//	// Parse current signing key
+//	_, currkey, err := crypto.ParseKeyFile(c.SignKeyFilePath, true)
+//	if err != nil {
+//		return err
+//	}
+//	c.signKey = currkey[0]
+//	c.redeemKeys = append(c.redeemKeys, c.signKey)
+//
+//	// optionally parse old keys that are valid for redemption
+//	if c.RedeemKeysFilePath != "" {
+//		errLog.Println("Adding extra keys for verifying token redemptions")
+//		_, oldKeys, err := crypto.ParseKeyFile(c.RedeemKeysFilePath, false)
+//		if err != nil {
+//			return err
+//		}
+//		c.redeemKeys = append(c.redeemKeys, oldKeys...)
+//	}
+//
+//	return nil
+//}
+
+func find(root, ext string) []string {
+   var a []string
+   filepath.WalkDir(root, func(s string, d fs.DirEntry, e error) error {
+      if e != nil { return e }
+      if filepath.Ext(d.Name()) == ext {
+         a = append(a, s)
+      }
+      return nil
+   })
+   return a
+}
+
 func (c *Server) loadKeys() error {
 	if c.SignKeyFilePath == "" {
 		return ErrEmptyKeyPath
@@ -137,29 +180,20 @@ func (c *Server) loadKeys() error {
 		return ErrEmptyCommPath
 	}
 
-	// Parse current signing key
-	_, currkey, err := crypto.ParseKeyFile(c.SignKeyFilePath, true)
-	if err != nil {
-		return err
-	}
-	c.signKey = currkey[0]
-	c.redeemKeys = append(c.redeemKeys, c.signKey)
-
-	// optionally parse old keys that are valid for redemption
-	if c.RedeemKeysFilePath != "" {
-		errLog.Println("Adding extra keys for verifying token redemptions")
-		_, oldKeys, err := crypto.ParseKeyFile(c.RedeemKeysFilePath, false)
+	for _, keyFile := range find(c.SignKeyFilePath, ".pem") {
+		_, currkey, err := crypto.ParseKeyFile(keyFile, true)
 		if err != nil {
 			return err
 		}
-		c.redeemKeys = append(c.redeemKeys, oldKeys...)
+		c.signKeys = append(c.signKeys, currkey[0])
+		c.redeemKeys = append(c.redeemKeys, currkey[0])
 	}
 
 	return nil
 }
 
 func (c *Server) ListenAndServe() error {
-	if len(c.signKey) == 0 {
+	if len(c.signKeys) == 0 {
 		return ErrNoSecretKey
 	}
 
@@ -260,22 +294,19 @@ func main() {
 		return
 	}
 
-	// Get bytes for public commitment to private key
-	GBytes, HBytes, err := crypto.ParseCommitmentFile(srv.CommFilePath)
-	if err != nil {
-		errLog.Fatal(err)
-		return
-	}
-
-	// Retrieve the actual elliptic curve points for the commitment
-	// The commitment should match the current key that is being used for
-	// signing
-	//
-	// We only support curve point commitments for P256-SHA256
-	srv.G, srv.H, err = crypto.RetrieveCommPoints(GBytes, HBytes, srv.signKey)
-	if err != nil {
-		errLog.Fatal(err)
-		return
+	for i, commFile := range find(srv.CommFilePath, ".comm") {
+		GBytes, HBytes, err := crypto.ParseCommitmentFile(commFile)
+		if err != nil {
+			errLog.Fatal(err)
+			return
+		}
+		G, H, err := crypto.RetrieveCommPoints(GBytes, HBytes, srv.signKeys[i])
+		if err != nil {
+			errLog.Fatal(err)
+			return
+		}
+		srv.G = append(srv.G, G)
+		srv.H = append(srv.H, H)
 	}
 
 	err = srv.ListenAndServe()

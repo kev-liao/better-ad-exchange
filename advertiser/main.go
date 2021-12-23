@@ -174,14 +174,14 @@ func main() {
 		return
 	}
 
-	unspentTokens := []*btd.UnspentToken{}
+	unspentTokens := make([]*btd.UnspentToken, numTokens)
 	for i := 0; i < numTokens; i++ {
-		token := &btd.UnspentToken{
+		unspentTokens[i] = &btd.UnspentToken{
 			Denom: denom,
 			Header: tokens[i],
 			BlindingFactor: bF[i],
 			SignedToken: response.Sigs[i]}
-		unspentTokens = append(unspentTokens, token)
+		
 	}
 
 	file, err := json.MarshalIndent(unspentTokens, "", " ")

@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 )
 
-type UnspentTokens struct {
-	Headers         [][]byte
-	BlindingFactors [][]byte
-	SignedTokens    [][]byte
+type UnspentToken struct {
+	Denom          int
+	Header         []byte
+	BlindingFactor []byte
+	SignedToken    []byte
 }
 
 // This is a transport format induced by internal systems. It should be

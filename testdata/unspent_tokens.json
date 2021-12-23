@@ -1,0 +1,62 @@
+[
+ {
+  "Denom": 3,
+  "Header": "b+maL7j19TqomUtAWq6qWKcuWweyQZ6ElbbkkClZPvA=",
+  "BlindingFactor": "U1BMdeaNK5ysaw9MYb+uodzd6SjFeRZz20QuHxl/q5s=",
+  "SignedToken": "BASEwcs4XiLCDkhaY4M+VW/vPZmk3i4VDT2lIRIdsmgGAecVeQakk3HAillhJruxnaJVSVGM7GDvY/fPMIbB9e4="
+ },
+ {
+  "Denom": 3,
+  "Header": "ii45c8j6v84P6DUUqU3pSM6taanazVLdLk9fypmj+yg=",
+  "BlindingFactor": "6aSZPJrFh2umARII2Utf2ZCAzYTJsf96rgWioA0urMM=",
+  "SignedToken": "BMZox5HYYImqhOTcxvZtp+2nAYof9eHAhcvgi+gnEDJw4yLv5/q/euqh3GW1Jv2QziRBh8UqUuJdnEHoetBw1Bw="
+ },
+ {
+  "Denom": 3,
+  "Header": "u833fNJJdt5Smu6xtT0jbnO4Ob9wdA8M9w9k8qi8Zt0=",
+  "BlindingFactor": "dtSew/ttExUfcmc9QlDDxdeS4EGCgQqdKgzYG5VNisU=",
+  "SignedToken": "BNHuxMi6gTwk6bTCLqYN29eD3xuaoh/eN7L51vTh3vDVcB0AICpmzzLQgsqXYLZWYXtPHGVgOaLG4v3ILMyJVtY="
+ },
+ {
+  "Denom": 3,
+  "Header": "yhdlIrcwqnxl6P+UawBKep1NssWVG5k7SRzyXRUO1GU=",
+  "BlindingFactor": "hleGsIP93iVSPVVmpl0aDf1urcPn4LB/dztPXC7GLTM=",
+  "SignedToken": "BHW69DItmqIyliWe4ZY8xHvtcIY94F4mSz3WohrTAA3r4k56o1rCNcAn+Qr4lglkvM8DRsisQRFnHhIVMyIWCLg="
+ },
+ {
+  "Denom": 3,
+  "Header": "RI/G12DwYQmXHuydlm5SP+vzTDydlrj/TQ+wSvjU/es=",
+  "BlindingFactor": "VyG0T4JAwplaKgGyEqeY+FxojpCDviWhkeTZClAwb5Y=",
+  "SignedToken": "BOPg4Rsro8Q5HoipEeeetf8V9PwKcRQGJv+3hi+PS5e3vn6zmODkUFGOqe1/l25oBujjPd5S9Vtv03hdFJHq9Lc="
+ },
+ {
+  "Denom": 3,
+  "Header": "nLoqlhlAt9vzj++Y6VgbGCvugGFIUtEvWa0Hdm6farw=",
+  "BlindingFactor": "g9ZXwKTdBl/GWu0MZuCiMnUSemnuEqO0RQUm9TG/GhY=",
+  "SignedToken": "BEWSxj2Smrin1weR6d1IHW9//pemPN+TsKZgF4+H/Q8amV310+yPlJQoAMT8wZFQNy21Au3pDO+BomYr2aQTqyo="
+ },
+ {
+  "Denom": 3,
+  "Header": "MY45ZcYQ5HjkHsAGm5r8tUumlcsDM0xWssZvwsT7Ru0=",
+  "BlindingFactor": "8JLMnCucragj3qHr9yVm5lYGJGNarEnTpRzr/KKAUSA=",
+  "SignedToken": "BABHqGEtJUF2BYV5LZz6WSyVVyljwnxmVy5r9TJ6+86HtupENFLo+a1LeTrI1h9ggembJlZAAv7gs1KvFVnZAwg="
+ },
+ {
+  "Denom": 3,
+  "Header": "lBY8UQhghEe+BEHAZCw0eSQlEQK5Y2ZMHQCtb9dwiyo=",
+  "BlindingFactor": "UJadi/vUyjpmgU/JgoL87ExNkZ1Cshf1fOhNsYS7Q2M=",
+  "SignedToken": "BPNoFJ1yp00mCjZr+UWxXsCFrsbQAQ0C0u8PsxGivAAfKmGT15Tw4xddXzDi3aIcyYUABsTCrPKXtD6GuVSEOjM="
+ },
+ {
+  "Denom": 3,
+  "Header": "nPxsIk++VJJaH24tS5q2JTLA4cK3nsB6Oo1z+V3ku34=",
+  "BlindingFactor": "ndjYaLOI/0lLr9kSmPIjTeteg4ZSoETpg2nBW0dz5xA=",
+  "SignedToken": "BI1Kq+DvMnbVoDHwzQI/umk8lNIkb1/eWPyFaFXIMSQneh6iyPRr04HQkSEP85GMeThYkjudsMKC3yZmqR7laeE="
+ },
+ {
+  "Denom": 3,
+  "Header": "yXIoO8VZwyh/33wTiMOymqJ8OPUQ5mOUBhOigbDE/fc=",
+  "BlindingFactor": "k4SJbJG2XJkdxKTIU3KgpcGbiKvVC9M2FxyisElwRP0=",
+  "SignedToken": "BFpYKDi4KTUCXR9nKzGE72Cxeii9USAwub8UJcPv5P4dglgonvDRBJOKRT+hv/kRE8QeNM5WkkXxqEI+XacHDss="
+ }
+]

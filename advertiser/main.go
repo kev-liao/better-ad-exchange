@@ -152,7 +152,7 @@ func main() {
 	response, err := decodeTokenResponse(encodedResponse)
 	if err != nil {
 		errLog.Fatal(err)
-		return
+	1	return
 	}	
 
 	xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), response.Sigs)
@@ -174,7 +174,15 @@ func main() {
 		return
 	}
 
-	unspentTokens := &btd.UnspentTokens{Headers: tokens, BlindingFactors: bF, SignedTokens: response.Sigs}
+	unspentTokens := []*btd.UnspentToken{}
+	for i := 0; i < numTokens; i++ {
+		token := &btd.UnspentToken{
+			Denom: denom,
+			Header: tokens[i],
+			BlindingFactor: bF[i],
+			SignedToken: response.Sigs[i]}
+		unspentTokens = append(unspentTokens, token)
+	}
 
 	file, err := json.MarshalIndent(unspentTokens, "", " ")
 	if err != nil {
@@ -187,8 +195,6 @@ func main() {
 		errLog.Fatal(err)
 		return
 	}
-
-	// TODO: Make tokens from unspentTokens
 	
 	return
 }

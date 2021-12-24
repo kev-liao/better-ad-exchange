@@ -157,7 +157,7 @@ func main() {
 		return
 	}
 
-	var unspentToks = make(map[int][]*btd.UnspentToken)	
+	var unspentToks = make(map[int]*btd.UnspentTokens)	
 	for denom, numTokens := range denoms {
 		requestBytes, tokens, bP, bF, err := makeTokenRequest(h2cObj, denom, numTokens)
 		if err != nil {
@@ -208,14 +208,12 @@ func main() {
 			return
 		}
 
-		unspentTokens := make([]*btd.UnspentToken, numTokens)
-		for i := 0; i < numTokens; i++ {
-			unspentTokens[i] = &btd.UnspentToken{
-				Denom: denom,
-				Header: tokens[i],
-				BlindingFactor: bF[i],
-				SignedToken: response.Sigs[i]}
-		}
+		unspentTokens := &btd.UnspentTokens{
+			Denom: denom,
+			Header: tokens,
+			BlindingFactor: bF,
+			SignedToken: response.Sigs}
+
 		unspentToks[denom] = unspentTokens
 	}
 

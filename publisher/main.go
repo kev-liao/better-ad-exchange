@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"flag"	
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"	

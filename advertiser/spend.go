@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"	
-	"fmt"
+	//"fmt"
 	"io/ioutil"
 	"log"	
 	"os"
@@ -19,9 +19,10 @@ var	(
 
 func main() {
 	var err error
-	var tokenFile string
+	var unspentTokenFile, paidTokenFile string
 
-	flag.StringVar(&tokenFile, "in", "", "path to the token file")
+	flag.StringVar(&unspentTokenFile, "in", "", "path to unspent token file")
+	flag.StringVar(&paidTokenFile, "out", "", "path to paid token file")
 	flag.Parse()
 	
 	cp := &crypto.CurveParams{Curve: "p256", Hash: "sha256", Method: "swu"}
@@ -31,90 +32,54 @@ func main() {
 		return
 	}
 
-	file, err := ioutil.ReadFile(tokenFile)
+	file, err := ioutil.ReadFile(unspentTokenFile)
 	if err != nil {
 		errLog.Fatal(err)
 		return
 	}
 	
-	unspentTokens := make(map[int][]*btd.UnspentToken)
+	unspentTokens := make(map[int]*btd.UnspentTokens)
 	err = json.Unmarshal([]byte(file), &unspentTokens)
 	if err != nil {
 		errLog.Fatal(err)
 		return
 	}
 	
-	spentTokens := make(map[int][]*btd.SpentToken)
-
+	paidTokens := make(map[int]*btd.PaidTokens)
 	for denom, tokens := range unspentTokens {
-		fmt.Println(denom)
-		xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), unspentTokens[denom].SignedTokens)
+		xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), tokens.SignedTokens)
 		if err != nil {
 			errLog.Fatal(err)
 			return
 		}
-		fmt.Println(xbP)
-		//xT := crypto.UnblindPoint(xbP[index], unspentTokens[denom].BlindingFactors[index])
-		//sk := crypto.DeriveKey(h2cObj.Hash(), xT, unspentTokens.Headers[index])
-		//reqData := [][]byte{testMessage}
-		//reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, reqData)
-		//contents := [][]byte{unspentTokens.Headers[index], reqBinder}		
+		tags := make([][][]byte, len(tokens.Headers))
+		messages := make([][][]byte, len(tokens.Headers))		
+		for i := 0; i < len(tokens.Headers); i++ {
+			xT := crypto.UnblindPoint(xbP[i], tokens.BlindingFactors[i])
+			sk := crypto.DeriveKey(h2cObj.Hash(), xT, tokens.Headers[i])
+			messages[i] = [][]byte{testMessage}
+			reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, messages[i])
+			tags[i] = [][]byte{tokens.Headers[i], reqBinder}
+		}
+		paidTokens[denom] = &btd.PaidTokens{
+			Denom: denom,
+			Headers: tokens.Headers,
+			Tags: tags,
+			Messages: messages}
 	}
 
-	
-	//xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), unspentTokens.SignedTokens)
-	//if err != nil {
-	//	errLog.Fatal(err)
-	//	return
-	//}	
-	//
-	//xT := crypto.UnblindPoint(xbP[index], unspentTokens.BlindingFactors[index])
-	//sk := crypto.DeriveKey(h2cObj.Hash(), xT, unspentTokens.Headers[index])
-	//reqData := [][]byte{testMessage}
-	//reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, reqData)
-	//contents := [][]byte{unspentTokens.Headers[index], reqBinder}
-	//h2cParamsBytes, err := json.Marshal(cp)
-	//if err != nil {
-	//	errLog.Fatal(err)
-	//	return
-	//}
-	//contents = append(contents, h2cParamsBytes)
-	//redeemRequest := &btd.BlindTokenRequest{
-	//	Type:     "Redeem",
-	//	Contents: contents,
-	//}
-	//
-	//encoded, _ := btd.MarshalRequest(redeemRequest)
-	//wrappedRequest := &btd.BlindTokenRequestWrapper{
-	//	Request: encoded,
-	//	Message: string(testMessage),
-	//}
-	//
-	//requestBytes, err := json.Marshal(wrappedRequest)
-	//if err != nil {
-	//	errLog.Fatal(err)
-	//	return		
-	//}
-	//
-	//conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", address, strconv.Itoa(port)))
-	//if err != nil {
-	//	errLog.Fatal(err)
-	//	return
-	//}	
-	//
-	//_, err = conn.Write(requestBytes)
-    //if err != nil {
-	//	errLog.Fatal(err)
-	//	return		
-    //}
-	//
-	//redeemResponse, err := ioutil.ReadAll(conn)
-    //if err != nil {
-	//	errLog.Fatal(err)
-	//	return		
-    //}	
-	//
-	//fmt.Println(string(redeemResponse))
+
+	file, err = json.MarshalIndent(paidTokens, "", " ")
+	if err != nil {
+		errLog.Fatal(err)
+		return
+	}	
+
+	err = ioutil.WriteFile(paidTokenFile, file, 0644)
+	if err != nil {
+		errLog.Fatal(err)
+		return
+	}
 	
 	return
 }

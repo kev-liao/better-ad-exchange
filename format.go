@@ -5,17 +5,17 @@ import (
 )
 
 type UnspentTokens struct {
-	Denom          int
-	Header         [][]byte
-	BlindingFactor [][]byte
-	SignedToken    [][]byte
+	Denom           int
+	Headers         [][]byte
+	BlindingFactors [][]byte
+	SignedTokens    [][]byte
 }
 
-type SpentTokens struct {
-	Denom   int
-	Header  [][]byte
-	Tag     [][]byte
-	Message [][]byte
+type PaidTokens struct {
+	Denom    int
+	Headers  [][]byte
+	Tags     [][][]byte
+	Messages [][][]byte
 }
 
 // This is a transport format induced by internal systems. It should be

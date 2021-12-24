@@ -210,9 +210,9 @@ func main() {
 
 		unspentTokens := &btd.UnspentTokens{
 			Denom: denom,
-			Header: tokens,
-			BlindingFactor: bF,
-			SignedToken: response.Sigs}
+			Headers: tokens,
+			BlindingFactors: bF,
+			SignedTokens: response.Sigs}
 
 		unspentToks[denom] = unspentTokens
 	}

@@ -10,7 +10,7 @@ import (
 	"os"
 	"strconv"	
 
-	"github.com/kev-liao/challenge-bypass-server"	
+	"github.com/kev-liao/challenge-bypass-server"
 	"github.com/kev-liao/challenge-bypass-server/crypto"
 )
 

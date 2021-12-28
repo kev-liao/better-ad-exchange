@@ -8,8 +8,6 @@ import (
 	"log"	
 	"net/http"
 	"net/url"
-	//"strconv"
-	//"strings"
 
 	"github.com/kev-liao/challenge-bypass-server"	
 )
@@ -39,7 +37,6 @@ func bidArgMax(array []int) int {
 	}
 	return max
 }
-
 
 func main() {
 	client := &http.Client{}	

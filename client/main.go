@@ -94,7 +94,7 @@ func main() {
 		fmt.Println(winResponse)
 
 		// 4. Forward tokens		
-		fwdWinResponse := &btd.FwdWinResponse{}
+		fwdWinResponse := &btd.TokenPayment{}
 		fwdWinResponse.Price = winResponse.Price
 		fwdWinResponse.Tokens = winResponse.Tokens
 		jsonData, err := json.Marshal(fwdWinResponse)

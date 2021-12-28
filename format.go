@@ -16,7 +16,7 @@ type WinResponse struct {
 	Tokens []*PaidTokens	
 }
 
-type FwdWinResponse struct {
+type TokenPayment struct {
 	Price int
 	Tokens []*PaidTokens	
 }

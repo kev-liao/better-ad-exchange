@@ -1,15 +1,15 @@
 package main
 
 import (
-	//"bytes"
+	"bytes"
 	"encoding/json"	
 	"fmt"
 	"io/ioutil"
 	"log"	
 	"net/http"
 	"net/url"
-	"strconv"
-	"strings"
+	//"strconv"
+	//"strings"
 
 	"github.com/kev-liao/challenge-bypass-server"	
 )
@@ -42,11 +42,59 @@ func bidArgMax(array []int) int {
 
 
 func main() {
-	urls = 
-	// 1. Visit callbackURLs
-	// 2. Run local auction
-	// 3. Send winNotice	
+	client := &http.Client{}	
+	aucSize := 20
+	urls := make([]string, aucSize)
+	bids := make([]int, aucSize)
+	
+	// 1. Visit callback URLs
+	for i := 0; i < aucSize; i++ {
+		urls[i] = "http://localhost:8080"
+		resource := "/bidrequest"
+		u, _ := url.ParseRequestURI(urls[i])
+		u.Path = resource
+		urlStr := u.String()
+		request, err := http.NewRequest("GET", urlStr, nil)
+		response, error := client.Do(request)
+		if error != nil {
+			log.Fatal(err)
+			return
+		}
+		defer response.Body.Close()
 
+		if response.Status == "200 OK" {
+			body, _ := ioutil.ReadAll(response.Body)
+			bidResponse := &BidResponse{}
+			err = json.Unmarshal(body, &bidResponse)
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
+			bids[i] = bidResponse.Bid
+		}
+	}
+
+	// 2. Run local auction
+	winner := bidArgMax(bids)
+	price := bids[winner]
+	fmt.Println("Winner:", winner)
+	fmt.Println("Price:", price)
+	
+	// 3. Send winNotice
+	winnerUrl := urls[winner]
+	resource := "/win"
+	u, _ := url.ParseRequestURI(winnerUrl)
+	u.Path = resource
+	urlStr := u.String()
+	winningBid := &BidResponse{}
+	winningBid.Bid = price
+	jsonData, err := json.Marshal(winningBid)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	request, err := http.NewRequest("POST", urlStr, bytes.NewBuffer(jsonData))
+	response, err := client.Do(request)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -63,6 +111,8 @@ func main() {
 			return
 		}
 		fmt.Println(winResponse)
+
+		// 4. Forward tokens		
 		fwdWinResponse := &FwdWinResponse{}
 		fwdWinResponse.Price = winResponse.Price
 		fwdWinResponse.Tokens = winResponse.Tokens
@@ -71,8 +121,6 @@ func main() {
 			log.Fatal(err)
 			return
 		}
-
-		// 4. Forward tokens
 		publisherUrl := "http://localhost:8081"
 		resource = "/tokens"
 		u, _ = url.ParseRequestURI(publisherUrl)
@@ -80,8 +128,6 @@ func main() {
 		urlStr = u.String()
 		fmt.Println(urlStr)
 		request, err = http.NewRequest("POST", urlStr, bytes.NewBuffer(jsonData))
-		request.Header().Set("Content-Type", "application/json")
-		//request.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 		if err != nil {
 			log.Fatal(err)
 			return
@@ -99,5 +145,4 @@ func main() {
 			fmt.Println(string(body))
 		}
 	}
-	response.Body.Close()	
 }

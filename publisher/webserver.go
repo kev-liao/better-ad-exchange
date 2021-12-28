@@ -1,21 +1,28 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	
+	"github.com/kev-liao/challenge-bypass-server"	
 )
 
+type FwdWinResponse struct {
+	Price int
+	Tokens []*btd.PaidTokens	
+}
+
 func tokenHandler(w http.ResponseWriter, r *http.Request) {
-    if err := r.ParseForm(); err != nil {
-        fmt.Fprintf(w, "ParseForm() err: %v", err)
-        return
-    }
-	price := r.FormValue("price")	
-    tokens := r.FormValue("tokens")
-	
-	fmt.Println(price)
-	fmt.Println(tokens)
+	winResponse := &FwdWinResponse{}
+	err := json.NewDecoder(r.Body).Decode(&winResponse)	
+	if err != nil {
+		log.Fatal(err)
+		return
+    }		
+	fmt.Println(winResponse)
+
 	// TODO: Redeem tokens with ad exchange	
 	w.Write([]byte("<b>Tokens accepted.</b>"))
 }

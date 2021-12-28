@@ -8,7 +8,6 @@ import (
 	"log"
 	"math/rand"	
 	"net/http"
-	"strconv"
 
 	"github.com/kev-liao/challenge-bypass-server"
 )
@@ -55,21 +54,17 @@ type WinResponse struct {
 }
 
 func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
-    if err := r.ParseForm(); err != nil {
-        fmt.Fprintf(w, "ParseForm() err: %v", err)
-        return
-    }
-    priceStr := r.FormValue("price")
-	href := "https://adidas.com"
-	src := "https://picsum.photos/seed/picsum/200/300"
-	markup :=  fmt.Sprintf("<a href=\"%s\"><img src=\"%s\"></a>", href, src)
-
-	price, err := strconv.Atoi(priceStr)
+	bidRequest := &BidResponse{}
+	err := json.NewDecoder(r.Body).Decode(&bidRequest)	
 	if err != nil {
 		log.Fatal(err)
 		return
-	}	
-
+    }	
+	href := "https://adidas.com"
+	src := "https://picsum.photos/seed/picsum/200/300"
+	price := bidRequest.Bid
+	markup :=  fmt.Sprintf("<a href=\"%s\"><img src=\"%s\"></a>", href, src)
+	
 	response := &WinResponse{Price: price, Markup: markup, Tokens: []*btd.PaidTokens{}}
 	for i := 0; i < 8; i++ {
 		if (price >> i & 1) == 1 {

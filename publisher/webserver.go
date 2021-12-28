@@ -9,13 +9,8 @@ import (
 	"github.com/kev-liao/challenge-bypass-server"	
 )
 
-type FwdWinResponse struct {
-	Price int
-	Tokens []*btd.PaidTokens	
-}
-
 func tokenHandler(w http.ResponseWriter, r *http.Request) {
-	winResponse := &FwdWinResponse{}
+	winResponse := &btd.FwdWinResponse{}
 	err := json.NewDecoder(r.Body).Decode(&winResponse)	
 	if err != nil {
 		log.Fatal(err)

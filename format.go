@@ -4,6 +4,25 @@ import (
 	"encoding/json"
 )
 
+// Web server structs
+
+type BidResponse struct {
+	Bid int
+}
+
+type WinResponse struct {
+	Price int
+	Markup string
+	Tokens []*PaidTokens	
+}
+
+type FwdWinResponse struct {
+	Price int
+	Tokens []*PaidTokens	
+}
+
+// Anonymous token structs
+
 type UnspentTokens struct {
 	Denom           int
 	Headers         [][]byte

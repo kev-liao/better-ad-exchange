@@ -12,22 +12,6 @@ import (
 	"github.com/kev-liao/challenge-bypass-server"	
 )
 
-// TODO: Put into format.go
-type BidResponse struct {
-	Bid int
-}
-
-type WinResponse struct {
-	Price int
-	Markup string
-	Tokens []*btd.PaidTokens	
-}
-
-type FwdWinResponse struct {
-	Price int
-	Tokens []*btd.PaidTokens	
-}
-
 func bidArgMax(array []int) int {
 	max := 0
 	for i := 1; i < len(array); i++ {
@@ -61,7 +45,7 @@ func main() {
 
 		if response.Status == "200 OK" {
 			body, _ := ioutil.ReadAll(response.Body)
-			bidResponse := &BidResponse{}
+			bidResponse := &btd.BidResponse{}
 			err = json.Unmarshal(body, &bidResponse)
 			if err != nil {
 				log.Fatal(err)
@@ -83,7 +67,7 @@ func main() {
 	u, _ := url.ParseRequestURI(winnerUrl)
 	u.Path = resource
 	urlStr := u.String()
-	winningBid := &BidResponse{}
+	winningBid := &btd.BidResponse{}
 	winningBid.Bid = price
 	jsonData, err := json.Marshal(winningBid)
 	if err != nil {
@@ -101,7 +85,7 @@ func main() {
 	if response.Status == "200 OK" {
 		fmt.Println(response.Header)
 		body, _ := ioutil.ReadAll(response.Body)
-		winResponse := &WinResponse{}		
+		winResponse := &btd.WinResponse{}		
 		err = json.Unmarshal([]byte(body), &winResponse)
 		if err != nil {
 			log.Fatal(err)
@@ -110,7 +94,7 @@ func main() {
 		fmt.Println(winResponse)
 
 		// 4. Forward tokens		
-		fwdWinResponse := &FwdWinResponse{}
+		fwdWinResponse := &btd.FwdWinResponse{}
 		fwdWinResponse.Price = winResponse.Price
 		fwdWinResponse.Tokens = winResponse.Tokens
 		jsonData, err := json.Marshal(fwdWinResponse)

@@ -12,10 +12,6 @@ import (
 	"github.com/kev-liao/challenge-bypass-server"
 )
 
-type BidResponse struct {
-	Bid int
-}
-
 type AdServer struct {
 	PaidTokens map[int]*btd.PaidTokens
 }
@@ -35,7 +31,7 @@ func (s *AdServer) bidRequestHandler(w http.ResponseWriter, r *http.Request) {
     max := 255
     bid := rand.Intn(max - min) + min
 
-	response := &BidResponse{Bid: bid}
+	response := &btd.BidResponse{Bid: bid}
 	jsonData, err := json.Marshal(response)
 	if err != nil {
 		log.Fatal(err)
@@ -47,14 +43,8 @@ func (s *AdServer) bidRequestHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-type WinResponse struct {
-	Price int
-	Markup string
-	Tokens []*btd.PaidTokens	
-}
-
 func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
-	bidRequest := &BidResponse{}
+	bidRequest := &btd.BidResponse{}
 	err := json.NewDecoder(r.Body).Decode(&bidRequest)	
 	if err != nil {
 		log.Fatal(err)
@@ -65,7 +55,7 @@ func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
 	price := bidRequest.Bid
 	markup :=  fmt.Sprintf("<a href=\"%s\"><img src=\"%s\"></a>", href, src)
 	
-	response := &WinResponse{Price: price, Markup: markup, Tokens: []*btd.PaidTokens{}}
+	response := &btd.WinResponse{Price: price, Markup: markup, Tokens: []*btd.PaidTokens{}}
 	for i := 0; i < 8; i++ {
 		if (price >> i & 1) == 1 {
 			response.Tokens = append(response.Tokens, s.PaidTokens[i])

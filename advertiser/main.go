@@ -64,9 +64,8 @@ func makeTokenRequest(h2cObj crypto.H2CObject, denom, numTokens int) ([]byte, []
 	}
 
 	// XXX
-	contents := make([][][][]byte, 1)
-	contents[0] = make([][][]byte, 1)
-	contents[0][0] = marshaledTokenList
+	contents := make([][][]byte, 1)
+	contents[0] = marshaledTokenList
 	request := &btd.BlindTokenRequest{
 		Type: "Issue",
 		Contents: contents,

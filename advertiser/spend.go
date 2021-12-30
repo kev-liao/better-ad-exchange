@@ -53,24 +53,24 @@ func main() {
 	for denom, headers := range unspentTokens.Headers {
 		// Pop the top signed token
 		signedTok := [][]byte{unspentTokens.SignedTokens[denom][0]}
+		// Pop the top header
 		header := headers[0]
-		xbP, err := crypto.BatchUnmarshalPoints(
-			h2cObj.Curve(),
-			signedTok)
+		// Pop the top blinding factor		
+		bF := unspentTokens.BlindingFactors[denom][0]		
+		xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), signedTok)
 		if err != nil {
 			errLog.Fatal(err)
 			return
 		}
 
-		// Pop the top blinding factor
-		xT := crypto.UnblindPoint(xbP[0], unspentTokens.BlindingFactors[denom][0])
+		xT := crypto.UnblindPoint(xbP[0], bF)
 		sk := crypto.DeriveKey(h2cObj.Hash(), xT, header)
 		msg := [][]byte{testMsg}
 		reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, msg)
-		tag := [][]byte{header, reqBinder}
-		tag = append(tag, h2cParamsBytes)
+		contents := [][]byte{header, reqBinder}
+		contents = append(contents, h2cParamsBytes)
 		paidTokens.Headers = append(paidTokens.Headers, header)
-		paidTokens.Tags = append(paidTokens.Tags, tag)
+		paidTokens.Contents = append(paidTokens.Contents, contents)
 		paidTokens.Messages = append(paidTokens.Messages, msg)
 	}
 

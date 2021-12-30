@@ -25,14 +25,14 @@ type TokenPayment struct {
 // Anonymous token structs
 
 type UnspentTokens struct {
-	Headers         [][][]byte
+	Headers         [][][]byte // [denom][numTok][]byte
 	BlindingFactors [][][]byte
 	SignedTokens    [][][]byte
 }
 
 type PaidTokens struct {
 	Headers  [][]byte // [denom][]byte
-	Tags     [][][]byte
+	Contents [][][]byte
 	Messages [][][]byte
 }
 

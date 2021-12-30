@@ -69,7 +69,6 @@ func main() {
 		reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, msg)
 		contents := [][]byte{header, reqBinder}
 		contents = append(contents, h2cParamsBytes)
-		paidTokens.Headers = append(paidTokens.Headers, header)
 		paidTokens.Contents = append(paidTokens.Contents, contents)
 		paidTokens.Messages = append(paidTokens.Messages, msg)
 	}

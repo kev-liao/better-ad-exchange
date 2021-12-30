@@ -31,7 +31,6 @@ type UnspentTokens struct {
 }
 
 type PaidTokens struct {
-	Headers  [][]byte // [denom][]byte
 	Contents [][][]byte
 	Messages [][][]byte
 }

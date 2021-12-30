@@ -75,11 +75,9 @@ func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
 	
 	for i := 0; i < bidLen; i++ {
 		if (price >> i & 1) == 1 {
-			response.Tokens.Headers = append(response.Tokens.Headers, s.PaidTokens.Headers[i])
 			response.Tokens.Contents = append(response.Tokens.Contents, s.PaidTokens.Contents[i])
 			response.Tokens.Messages = append(response.Tokens.Messages, s.PaidTokens.Messages[i])
 		} else {
-			response.Tokens.Headers = append(response.Tokens.Headers, nil)
 			response.Tokens.Contents = append(response.Tokens.Contents, nil)
 			response.Tokens.Messages = append(response.Tokens.Messages, nil)
 		}

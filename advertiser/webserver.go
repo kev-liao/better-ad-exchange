@@ -30,8 +30,8 @@ func (s *AdServer) bidRequestHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-	max := 2^bidLen - 1
-	min := 2^(bidLen - 1)
+	max := 255
+	min := 200
     bid := rand.Intn(max - min) + min
 
 	response := &btd.BidResponse{Id: 0, Bid: bid}

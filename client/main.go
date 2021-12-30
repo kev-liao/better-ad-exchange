@@ -135,6 +135,7 @@ func main() {
 			return
 		}
 		publisherUrl := "http://localhost:8081"
+		start = time.Now()		
 		request, err = http.NewRequest(
 			"POST",
 			makeURL(publisherUrl, "/tokens"),
@@ -155,5 +156,7 @@ func main() {
 			body, _ := ioutil.ReadAll(response.Body)
 			fmt.Println(string(body))
 		}
+		elapsed = time.Since(start)
+		log.Printf("Pay tokens: %s", elapsed)		
 	}
 }

@@ -35,11 +35,12 @@ func (s *PubServer) tokenHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: Check that tokens add up to price
 	
 	// Redeem tokens with ad exchange
+	// TODO: Redeem in one request
 	for _, token := range payment.Tokens {
 		redeemRequest := &btd.BlindTokenRequest{
 			Type:     "Redeem",
 			Contents: token.Tags[0],
-		}
+			Denom: token.Denom}
 
 		encoded, _ := btd.MarshalRequest(redeemRequest)
 		wrappedRequest := &btd.BlindTokenRequestWrapper{

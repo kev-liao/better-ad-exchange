@@ -118,7 +118,9 @@ func (c *Server) handle(conn *net.TCPConn) error {
 		return nil
 	case btd.REDEEM:
 		metrics.CounterRedeemTotal.Inc()
-		err = btd.HandleRedeem(conn, request, wrapped.Message, c.redeemKeys)
+		// Choose correct redemption key
+		redeemKey := [][]byte{c.redeemKeys[request.Denom]}
+		err = btd.HandleRedeem(conn, request, wrapped.Message, redeemKey)
 		if err != nil {
 			metrics.CounterRedeemError.Inc()
 			conn.Write([]byte(err.Error())) // anything other than "success" counts as a VERIFY_ERROR

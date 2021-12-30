@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"	
 	"flag"	
 	"fmt"
 	"io/ioutil"	
@@ -12,11 +13,15 @@ import (
 	"github.com/kev-liao/challenge-bypass-server"
 )
 
-var bidLen = 8
+var (
+	bidLen = 8
+	ErrRedeemMultipleTokens = errors.New("redeemed tokens of same denomination")
+)
 
 type AdServer struct {
 	// TODO: Eventually, pay tokens on demand
 	PaidTokens *btd.PaidTokens
+
 }
 
 func (s *AdServer) bidRequestHandler(w http.ResponseWriter, r *http.Request) {
@@ -71,13 +76,17 @@ func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < bidLen; i++ {
 		// XXX: Should only send over one of each denomination
 		if (price >> i & 1) == 1 {
+			if len(s.PaidTokens.Headers[i]) != 1 {
+				log.Fatal(ErrRedeemMultipleTokens)
+				return
+			}			
 			response.Tokens.Headers = append(response.Tokens.Headers, s.PaidTokens.Headers[i])
 			response.Tokens.Tags = append(response.Tokens.Tags, s.PaidTokens.Tags[i])
 			response.Tokens.Messages = append(response.Tokens.Messages, s.PaidTokens.Messages[i])
 		} else {
-			response.Tokens.Headers = append(response.Tokens.Headers, [][]byte{})
-			response.Tokens.Tags = append(response.Tokens.Tags, [][][]byte{})
-			response.Tokens.Messages = append(response.Tokens.Messages, [][][]byte{})
+			response.Tokens.Headers = append(response.Tokens.Headers, nil)
+			response.Tokens.Tags = append(response.Tokens.Tags, nil)
+			response.Tokens.Messages = append(response.Tokens.Messages, nil)
 		}
 	}
 

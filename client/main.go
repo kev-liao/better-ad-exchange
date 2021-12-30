@@ -13,13 +13,15 @@ import (
 	"github.com/kev-liao/challenge-bypass-server"	
 )
 
+func makeURL(urlStr, resource string) string {
+	u, _ := url.ParseRequestURI(urlStr)
+	u.Path = resource
+	return u.String()
+}
+
 func makeBidRequest(id int, callbackUrl string, ch chan<-btd.BidResponse) {
 	client := &http.Client{}		
-	resource := "/bidrequest"
-	u, _ := url.ParseRequestURI(callbackUrl)
-	u.Path = resource
-	urlStr := u.String()
-	request, err := http.NewRequest("GET", urlStr, nil)
+	request, err := http.NewRequest("GET", makeURL(callbackUrl, "/bidrequest"), nil)
 	if err != nil {
 		log.Fatal(err)
 		ch <- btd.BidResponse{Id: id, Bid: 0}
@@ -88,16 +90,12 @@ func main() {
 	
 	// 3. Send winNotice
 	winnerUrl := urls[winner]
-	resource := "/win"
-	u, _ := url.ParseRequestURI(winnerUrl)
-	u.Path = resource
-	urlStr := u.String()
 	jsonBid, err := json.Marshal(maxBid)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	request, err := http.NewRequest("POST", urlStr, bytes.NewBuffer(jsonBid))
+	request, err := http.NewRequest("POST", makeURL(winnerUrl, "/win"), bytes.NewBuffer(jsonBid))
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -109,7 +107,7 @@ func main() {
 		return
 	}
 	defer response.Body.Close()	
-	fmt.Printf("Win notice: %s\n", response.Status)
+	fmt.Printf("Win notice response: %s\n", response.Status)
 	if response.Status == "200 OK" {
 		fmt.Println(response.Header)
 		body, _ := ioutil.ReadAll(response.Body)
@@ -131,12 +129,7 @@ func main() {
 			return
 		}
 		publisherUrl := "http://localhost:8081"
-		resource = "/tokens"
-		u, _ = url.ParseRequestURI(publisherUrl)
-		u.Path = resource
-		urlStr = u.String()
-		fmt.Println(urlStr)
-		request, err = http.NewRequest("POST", urlStr, bytes.NewBuffer(jsonPayment))
+		request, err = http.NewRequest("POST", makeURL(publisherUrl, "/tokens"), bytes.NewBuffer(jsonPayment))
 		if err != nil {
 			log.Fatal(err)
 			return
@@ -147,7 +140,7 @@ func main() {
 			return
 		}
 		defer response.Body.Close()		
-		fmt.Printf("Payment: %s\n", response.Status)		
+		fmt.Printf("Payment response: %s\n", response.Status)		
 		if response.Status == "200 OK" {
 			fmt.Println(response.Header)
 			body, _ := ioutil.ReadAll(response.Body)

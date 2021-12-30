@@ -95,7 +95,9 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-	request, err := http.NewRequest("POST", makeURL(winnerUrl, "/win"), bytes.NewBuffer(jsonBid))
+	request, err := http.NewRequest("POST",
+		makeURL(winnerUrl, "/win"),
+		bytes.NewBuffer(jsonBid))
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -129,7 +131,9 @@ func main() {
 			return
 		}
 		publisherUrl := "http://localhost:8081"
-		request, err = http.NewRequest("POST", makeURL(publisherUrl, "/tokens"), bytes.NewBuffer(jsonPayment))
+		request, err = http.NewRequest("POST",
+			makeURL(publisherUrl, "/tokens"),
+			bytes.NewBuffer(jsonPayment))
 		if err != nil {
 			log.Fatal(err)
 			return

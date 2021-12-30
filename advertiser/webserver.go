@@ -74,15 +74,14 @@ func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
 		Tokens: &btd.PaidTokens{}}
 	
 	for i := 0; i < bidLen; i++ {
-		// XXX: Should only send over one of each denomination
 		if (price >> i & 1) == 1 {
-			if len(s.PaidTokens.Headers[i]) != 1 {
-				log.Fatal(ErrRedeemMultipleTokens)
-				return
-			}			
-			response.Tokens.Headers = append(response.Tokens.Headers, s.PaidTokens.Headers[i])
-			response.Tokens.Tags = append(response.Tokens.Tags, s.PaidTokens.Tags[i])
-			response.Tokens.Messages = append(response.Tokens.Messages, s.PaidTokens.Messages[i])
+			// Pop the top token within a denomination
+			topHeader := [][]byte{s.PaidTokens.Headers[i][0]}
+			topTag := [][][]byte{s.PaidTokens.Tags[i][0]}
+			topMessage := [][][]byte{s.PaidTokens.Messages[i][0]}
+			response.Tokens.Headers = append(response.Tokens.Headers, topHeader)
+			response.Tokens.Tags = append(response.Tokens.Tags, topTag)
+			response.Tokens.Messages = append(response.Tokens.Messages, topMessage)
 		} else {
 			response.Tokens.Headers = append(response.Tokens.Headers, nil)
 			response.Tokens.Tags = append(response.Tokens.Tags, nil)

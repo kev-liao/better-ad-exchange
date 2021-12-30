@@ -109,7 +109,8 @@ func (c *Server) handle(conn *net.TCPConn) error {
 	switch request.Type {
 	case btd.ISSUE:
 		metrics.CounterIssueTotal.Inc()
-		i := request.Denom
+		// XXX
+		i := request.Denom[0]
 		err = btd.HandleIssue(conn, request, c.signKeys[i], c.keyVersion, c.G[i], c.H[i], c.MaxTokens)
 		if err != nil {
 			metrics.CounterIssueError.Inc()
@@ -119,7 +120,8 @@ func (c *Server) handle(conn *net.TCPConn) error {
 	case btd.REDEEM:
 		metrics.CounterRedeemTotal.Inc()
 		// Choose correct redemption key
-		redeemKey := [][]byte{c.redeemKeys[request.Denom]}
+		// XXX
+		redeemKey := [][]byte{c.redeemKeys[request.Denom[0]]}
 		err = btd.HandleRedeem(conn, request, wrapped.Message, redeemKey)
 		if err != nil {
 			metrics.CounterRedeemError.Inc()

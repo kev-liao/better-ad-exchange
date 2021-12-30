@@ -63,11 +63,11 @@ func makeTokenRequest(h2cObj crypto.H2CObject, denom, numTokens int) ([]byte, []
 		return nil, nil, nil, nil, err
 	}
 
+	// XXX
 	request := &btd.BlindTokenRequest{
 		Type:     "Issue",
-		Contents: marshaledTokenList,
-		Denom:    denom,
-	}
+		Contents: [][][]byte{marshaledTokenList},
+		Denom:    []int{denom}}
 
 	encoded, _ := btd.MarshalRequest(request)
 	wrappedRequest := &btd.BlindTokenRequestWrapper{
@@ -157,13 +157,13 @@ func main() {
 		return
 	}
 
-	var unspentToks = make(map[int]*btd.UnspentTokens)	
+	var unspentToks = &btd.UnspentTokens{}
 	for denom, numTokens := range denoms {
 		requestBytes, tokens, bP, bF, err := makeTokenRequest(h2cObj, denom, numTokens)
 		if err != nil {
 			errLog.Fatal(err)
 			return
-		}	
+		}
 		
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", address, strconv.Itoa(port)))
 		if err != nil {
@@ -208,13 +208,9 @@ func main() {
 			return
 		}
 
-		unspentTokens := &btd.UnspentTokens{
-			Denom: denom,
-			Headers: tokens,
-			BlindingFactors: bF,
-			SignedTokens: response.Sigs}
-
-		unspentToks[denom] = unspentTokens
+		unspentToks.Headers = append(unspentToks.Headers, tokens)
+		unspentToks.BlindingFactors = append(unspentToks.BlindingFactors, bF)
+		unspentToks.SignedTokens = append(unspentToks.SignedTokens, response.Sigs)
 	}
 
 	file, err = json.MarshalIndent(unspentToks, "", " ")

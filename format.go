@@ -14,21 +14,20 @@ type BidResponse struct {
 type WinResponse struct {
 	Price int
 	Markup string
-	Tokens []*PaidTokens	
+	Tokens []*PaidTokens
 }
 
 type TokenPayment struct {
 	Price int
-	Tokens []*PaidTokens	
+	Tokens []*PaidTokens
 }
 
 // Anonymous token structs
 
 type UnspentTokens struct {
-	Denom           int
-	Headers         [][]byte
-	BlindingFactors [][]byte
-	SignedTokens    [][]byte
+	Headers         [][][]byte
+	BlindingFactors [][][]byte
+	SignedTokens    [][][]byte
 }
 
 type PaidTokens struct {
@@ -49,8 +48,8 @@ type BlindTokenRequestWrapper struct {
 // { type : (Issue|Redeem), contents : list of b64-encoded blinded points }
 type BlindTokenRequest struct {
 	Type     ReqType  `json:"type"`
-	Contents [][]byte `json:"contents"`
-	Denom    int      `json:"denom"`
+	Contents [][][]byte `json:"contents"`
+	Denom    []int      `json:"denom"`
 }
 
 // Contains response to Issue request

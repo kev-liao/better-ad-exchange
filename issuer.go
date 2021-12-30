@@ -62,7 +62,8 @@ func ApproveTokens(req BlindTokenRequest, key []byte, keyVersion string, G, H *c
 	}
 
 	// Unmarshal the incoming blinded points
-	P, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), req.Contents)
+	// XXX
+	P, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), req.Contents[0])
 	if err != nil {
 		return issueResponse, err
 	}
@@ -116,8 +117,9 @@ func ApproveTokens(req BlindTokenRequest, key []byte, keyVersion string, G, H *c
 // error on failure.
 func RedeemToken(req BlindTokenRequest, message []byte, keys [][]byte) error {
 	// If the length is 3 then the curve parameters are provided by the client
-	token, requestBinder := req.Contents[0], req.Contents[1]
-	curveParams, err := getClientCurveParams(req.Contents)
+	// XXX
+	token, requestBinder := req.Contents[0][0], req.Contents[0][1]
+	curveParams, err := getClientCurveParams(req.Contents[0])
 	if err != nil {
 		return err
 	}

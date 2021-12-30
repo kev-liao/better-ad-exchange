@@ -40,50 +40,91 @@ func (s *PubServer) tokenHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: Check that tokens add up to price
 	
 	// Redeem tokens with ad exchange
-	// TODO: Redeem in one request
-	for _, token := range payment.Tokens {
-		redeemRequest := &btd.BlindTokenRequest{
-			Type:     "Redeem",
-			Contents: token.Tags[0],
-			Denom: token.Denom}
+	redeemRequest := &btd.BlindTokenRequest{
+		Type: "Redeem",
+		Contents: token.Tags,
+		Denom: token.Denom}
 
-		encoded, _ := btd.MarshalRequest(redeemRequest)
-		wrappedRequest := &btd.BlindTokenRequestWrapper{
-			Request: encoded,
-			Message: string(testMessage),
-		}
-		
-		requestBytes, err := json.Marshal(wrappedRequest)
-		if err != nil {
-			errLog.Fatal(err)
-			return		
-		}
-
-		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", s.ExchangeAddress, strconv.Itoa(s.ExchangePort)))
-		if err != nil {
-			errLog.Fatal(err)
-			return
-		}	
-
-		_, err = conn.Write(requestBytes)
-		if err != nil {
-			errLog.Fatal(err)
-			return		
-		}
-
-		redeemResponse, err := ioutil.ReadAll(conn)
-		if err != nil {
-			errLog.Fatal(err)
-			return		
-		}	
-
-		if string(redeemResponse) != "success" {
-			w.Write([]byte("0"))
-			return
-		}
+	encoded, _ := btd.MarshalRequest(redeemRequest)
+	wrappedRequest := &btd.BlindTokenRequestWrapper{
+		Request: encoded,
+		Message: string(testMessage),
 	}
 	
+	requestBytes, err := json.Marshal(wrappedRequest)
+	if err != nil {
+		errLog.Fatal(err)
+		return		
+	}
+
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", s.ExchangeAddress, strconv.Itoa(s.ExchangePort)))
+	if err != nil {
+		errLog.Fatal(err)
+		return
+	}	
+
+	_, err = conn.Write(requestBytes)
+	if err != nil {
+		errLog.Fatal(err)
+		return		
+	}
+
+	redeemResponse, err := ioutil.ReadAll(conn)
+	if err != nil {
+		errLog.Fatal(err)
+		return		
+	}	
+
+	if string(redeemResponse) != "success" {
+		w.Write([]byte("0"))
+		return
+	}
+	// TODO: Redeem in one request
+	//for _, token := range payment.Tokens {
+	//	redeemRequest := &btd.BlindTokenRequest{
+	//		Type:     "Redeem",
+	//		Contents: token.Tags,
+	//		Denom: token.Denom}
+	//
+	//	encoded, _ := btd.MarshalRequest(redeemRequest)
+	//	wrappedRequest := &btd.BlindTokenRequestWrapper{
+	//		Request: encoded,
+	//		Message: string(testMessage),
+	//	}
+	//	
+	//	requestBytes, err := json.Marshal(wrappedRequest)
+	//	if err != nil {
+	//		errLog.Fatal(err)
+	//		return		
+	//	}
+	//
+	//	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", s.ExchangeAddress, strconv.Itoa(s.ExchangePort)))
+	//	if err != nil {
+	//		errLog.Fatal(err)
+	//		return
+	//	}	
+	//
+	//	_, err = conn.Write(requestBytes)
+	//	if err != nil {
+	//		errLog.Fatal(err)
+	//		return		
+	//	}
+	//
+	//	redeemResponse, err := ioutil.ReadAll(conn)
+	//	if err != nil {
+	//		errLog.Fatal(err)
+	//		return		
+	//	}	
+	//
+	//	if string(redeemResponse) != "success" {
+	//		w.Write([]byte("0"))
+	//		return
+	//	}
+	//}
+	
 	w.Write([]byte("1"))
+
+	return
 }
 
 func main() {

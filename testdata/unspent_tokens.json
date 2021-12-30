@@ -1,98 +1,80 @@
 {
- "0": {
-  "Denom": 0,
-  "Headers": [
-   "fhrC5e0LhAksd3HGaOgfmL+/CeAbU+9mJ8L1a4cvHCo="
+ "Headers": [
+  [
+   "igkTwPydpxjcDycTRlFZzBZrc0esBPAfGeBLGIQw1xg="
   ],
-  "BlindingFactors": [
-   "fo+owP1S225vQbrnVR/UUErlxKDQo+BT4kT+O9y+43Y="
+  [
+   "4B1Vgt27oVhLDU2kmEgc5+/yHL7ecoINylxQeatFA6M="
   ],
-  "SignedTokens": [
-   "BJ7AiPOTF8kHLG3/HygdIUCvL88siw0oRYdVtsY9EjOI7nwLnFAQwANCX+O1Anha1o4NMaXLsRlMrt1LapNeMGM="
+  [
+   "aK2vRKzZdqNpnRQppisq7atK0Wa35CUOD3pWsiDD4fM="
+  ],
+  [
+   "bPl4TORT+pPNnPjfFx3azj0BslseprxcUhUFLOA/dg0="
+  ],
+  [
+   "F7VH1cJ8wNO2xoXZLZVtsXtTW7d/JHVUATE9k8e/jgQ="
+  ],
+  [
+   "pYPVrK6iOrSU06JhjvefNFBbPbg6jIcpToSaZP6IDu0="
+  ],
+  [
+   "3zuKoSSRrWErMT/q4HwmzLuSi83/RiuMMv8RLWLrJfI="
+  ],
+  [
+   "GTfqvmb+dglObipKa5rENVfc7nTaBi+g1D563hqzVYw="
   ]
- },
- "1": {
-  "Denom": 1,
-  "Headers": [
-   "i66EtEdJyiaBwD2AJbs8LaDbo1OhFpmEpR82TWzFjxA="
+ ],
+ "BlindingFactors": [
+  [
+   "Nm0Kbs9rKHy6+YGx8CKS7908i0jhiK8OFZ5UuB6XhYg="
   ],
-  "BlindingFactors": [
-   "i2YB3iVDrIdhSVFxojA80RjmRExVDlSWT3q2KhMXLLs="
+  [
+   "2R0d2KZ6vAXZqTVetfpYSCWdaY+6bNbLZtMzYo4eYNA="
   ],
-  "SignedTokens": [
-   "BAXViy0PKC4wEW1cOlRs4S3rkaYHq27tGhWoovta4E6EIbl/jhqz24w0FwdC6NR2KrvAOtm540FMwE+sIjdJfOs="
+  [
+   "MhV0ETjZQG3ylLrI9MEe451jl32xhQl3u78XlsmEWzw="
+  ],
+  [
+   "x8Ww03bzF/t/5mRmmhtfqbQGZ0/Rvc6MLVVhsTMR+0U="
+  ],
+  [
+   "4X2RLH01KQlWz89xeLKGVZqT+MEalz4HE1Fni0GMenQ="
+  ],
+  [
+   "LdjjxzNvLQw6BXNDx5+ImTwOO1LCyJbPcSuxxwzzL60="
+  ],
+  [
+   "ExTs+zgunvVmuon61DNXmAPwdYkAcmOfdsQZTTO1zc8="
+  ],
+  [
+   "6SU/tlM0oMgpZe7Wj0tyze5wGxBO3FnmO37liwh49s0="
   ]
- },
- "2": {
-  "Denom": 2,
-  "Headers": [
-   "BSgVJC4YBQmk6p1trsOmXnjlEKkXtHEZsZECY6yh9Us="
+ ],
+ "SignedTokens": [
+  [
+   "BDM2cOt7DU8d48qZgbibFQYmqOmPkbcDxmMOpwo4y2JlDPizaW741id8IcMcu1nkmjk4LXfl70xB3ubCdun+6NA="
   ],
-  "BlindingFactors": [
-   "D9CTMju6t1gO/3rB5pttqPh58e4TNiEoqJby4B0L4I8="
+  [
+   "BKsDRv1+u2uU1mUnMEuQRyehDLJevniNjUdCb+LhZnzEqzq4UAMZvnI/OHAKnE0fEgRf+HzXtg0HxE5jcHchFJ0="
   ],
-  "SignedTokens": [
-   "BJ+F/HVxlS6DInSNKfjG9UkubrvlbkEwUZkqpkNTLcK1iVdEhV/SfzITWm12k8367xMEkASCxWuaaec5oDsGP6o="
+  [
+   "BFcdGH6e4E9Noj2JMKlRC6BEmoyzuqwaXjjjq36hjDiMVdf+9tKik7oMp9eq9bCPBv+s2fngwsdeqCgzF7z9LmY="
+  ],
+  [
+   "BK6PRjaa3Y+ttxe6r1kqoRkhgPrllpHjVfPnqwjikFtAq9ad5+rHgvYen9O/3f7BKXIzzrxJ0Cz0bHYkPYV+Tto="
+  ],
+  [
+   "BB3103CoXv556xyiEJfx8hNlKPByTAlE0yZ6WXcbH8OWexEBkV0Ua4UpvlEFn3fTt3RuNmqP+ouQ4sslchP62dY="
+  ],
+  [
+   "BDOXUZ/cGoZh15I9SFmFu8JcW/qwIzun1+WR+WwMn9KkT2JLQdEVEf7D5IQwiUmNoeOzNWKex/n1IUCRM2TsszA="
+  ],
+  [
+   "BKGjm0/OTkI+YJz2kT7L+pJzLfK+X5AQi0mjaUuqtd/zFfdrpMlIxG1Qll/cECMSYRl4VR8UyRbMrRGOWwFzDB0="
+  ],
+  [
+   "BA/mzAFEVlhdkD8hZw1tQsGqd0u5+RodF9+9CqD5kVBiImslOOG1U1kUUZVUO2aI6RDzDLUcr8nviJ3LfUo70/c="
   ]
- },
- "3": {
-  "Denom": 3,
-  "Headers": [
-   "43czKnrSKfhzKMbDlFVB4U1pW8XwL9uekxYtREpD5Kw="
-  ],
-  "BlindingFactors": [
-   "6YqGkPPLs92L3p+bvPLGa1pZ0bdw8RctNrgHlfYqn6U="
-  ],
-  "SignedTokens": [
-   "BN2QRjUUxGNUEfiLa6Cp2GB40wSkWSD1MOP1xtF4TA7CR6ZX+g/jwHJzIhX2CR0x17ml9COBHQTQR1MP4hmw8as="
-  ]
- },
- "4": {
-  "Denom": 4,
-  "Headers": [
-   "1b+Xu0cTRXCPkm+qoWghP868RA29oUeynHwbTBqxOSY="
-  ],
-  "BlindingFactors": [
-   "YMj+Y+A3odW2vnGiM3EO1mA0W3cIjtL63oMY7cq+lfc="
-  ],
-  "SignedTokens": [
-   "BLum2nw7LVgAaelAeLS7oaWYxVcPsXDBc8/7TToa6lpPoq80mQdYOoF7iZflzC9MXWMeREg0hW1PqZ5X4UlSig4="
-  ]
- },
- "5": {
-  "Denom": 5,
-  "Headers": [
-   "wp4HofH7HN4AjOI2jzgbajler3+0Iehwc/7SpWyiU3M="
-  ],
-  "BlindingFactors": [
-   "JTrt+eIx0HhtUDnv1clgQ6BzE1ewETWBgO3u7+wwNaw="
-  ],
-  "SignedTokens": [
-   "BBQZD2N9v6qvJzxyEL7cA5rE0edfSJfQW6a1vBEud6stAAhCVDYs1DGV/VNh/zC2MIay33y9xxbwiSk5UDLDoLY="
-  ]
- },
- "6": {
-  "Denom": 6,
-  "Headers": [
-   "EMGbplrBEeTlvLS0yVJZ4gUhELWKNsLkVETEc4khBsw="
-  ],
-  "BlindingFactors": [
-   "Kprsx8oFppFvIhoRlEXX5zonVf8t81dl0fIHWDmORZ0="
-  ],
-  "SignedTokens": [
-   "BG3a1DoTtxByGKb+lZTVJiOemdQLJW0FwuROy31XP4WDAnpttVAoKcyeIUL7rP05mFa00+VpFk6BiDMIqR5NPw0="
-  ]
- },
- "7": {
-  "Denom": 7,
-  "Headers": [
-   "qinylaXuNHJICE0LXx+9oyJg2Y3fwXbOcOTWKd2hHr0="
-  ],
-  "BlindingFactors": [
-   "DIrrxQdzuXRT58dwBawq0jQXq8wymj9iT5x3zyu/8eI="
-  ],
-  "SignedTokens": [
-   "BGv89Vhx99n7zeuCQg5wyQPevMoZLbZY3Ndw1Y82t/eX/r/KlnjuVAFJ5qIWKcw22jaaKEN/MUQ2/WvOJsI0fiE="
-  ]
- }
+ ]
 }

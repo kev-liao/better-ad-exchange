@@ -31,9 +31,9 @@ type UnspentTokens struct {
 }
 
 type PaidTokens struct {
-	Headers  [][][]byte
-	Tags     [][][][]byte
-	Messages [][][][]byte
+	Headers  [][]byte // [denom][]byte
+	Tags     [][][]byte
+	Messages [][][]byte
 }
 
 // This is a transport format induced by internal systems. It should be
@@ -47,7 +47,7 @@ type BlindTokenRequestWrapper struct {
 // { type : (Issue|Redeem), contents : list of b64-encoded blinded points }
 type BlindTokenRequest struct {
 	Type     ReqType      `json:"type"`
-	Contents [][][][]byte `json:"contents"`
+	Contents [][][]byte `json:"contents"`
 	Denoms   []int        `json:"denoms"`
 }
 

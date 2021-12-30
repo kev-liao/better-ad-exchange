@@ -47,8 +47,7 @@ func (s *PubServer) tokenHandler(w http.ResponseWriter, r *http.Request) {
 	encoded, _ := btd.MarshalRequest(redeemRequest)
 	wrappedRequest := &btd.BlindTokenRequestWrapper{
 		Request: encoded,
-		Message: string(testMessage),
-	}
+		Message: string(testMessage)}
 	
 	requestBytes, err := json.Marshal(wrappedRequest)
 	if err != nil {
@@ -76,52 +75,9 @@ func (s *PubServer) tokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	if string(redeemResponse) != "success" {
 		w.Write([]byte("0"))
-		return
+	} else {
+		w.Write([]byte("1"))		
 	}
-	// TODO: Redeem in one request
-	//for _, token := range payment.Tokens {
-	//	redeemRequest := &btd.BlindTokenRequest{
-	//		Type:     "Redeem",
-	//		Contents: token.Tags,
-	//		Denom: token.Denom}
-	//
-	//	encoded, _ := btd.MarshalRequest(redeemRequest)
-	//	wrappedRequest := &btd.BlindTokenRequestWrapper{
-	//		Request: encoded,
-	//		Message: string(testMessage),
-	//	}
-	//	
-	//	requestBytes, err := json.Marshal(wrappedRequest)
-	//	if err != nil {
-	//		errLog.Fatal(err)
-	//		return		
-	//	}
-	//
-	//	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", s.ExchangeAddress, strconv.Itoa(s.ExchangePort)))
-	//	if err != nil {
-	//		errLog.Fatal(err)
-	//		return
-	//	}	
-	//
-	//	_, err = conn.Write(requestBytes)
-	//	if err != nil {
-	//		errLog.Fatal(err)
-	//		return		
-	//	}
-	//
-	//	redeemResponse, err := ioutil.ReadAll(conn)
-	//	if err != nil {
-	//		errLog.Fatal(err)
-	//		return		
-	//	}	
-	//
-	//	if string(redeemResponse) != "success" {
-	//		w.Write([]byte("0"))
-	//		return
-	//	}
-	//}
-	
-	w.Write([]byte("1"))
 
 	return
 }

@@ -51,28 +51,27 @@ func main() {
 	
 	paidTokens := &btd.PaidTokens{}
 	for denom, headers := range unspentTokens.Headers {
+		// Pop the top signed token
+		signedTok := [][]byte{unspentTokens.SignedTokens[denom][0]}
+		header := headers[0]
 		xbP, err := crypto.BatchUnmarshalPoints(
 			h2cObj.Curve(),
-			unspentTokens.SignedTokens[denom])
+			signedTok)
 		if err != nil {
 			errLog.Fatal(err)
 			return
 		}
 
-		msgs := make([][][]byte, len(xbP))
-		tags := make([][][]byte, len(xbP))		
-		for i := 0; i < len(xbP); i++ {
-			xT := crypto.UnblindPoint(xbP[i], unspentTokens.BlindingFactors[denom][i])
-			sk := crypto.DeriveKey(h2cObj.Hash(), xT, headers[i])
-			msg := [][]byte{testMsg}
-			reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, msg)
-			msgs[i] = msg
-			tags[i] = [][]byte{headers[i], reqBinder}
-			tags[i] = append(tags[i], h2cParamsBytes)
-		}
-		paidTokens.Headers = append(paidTokens.Headers, headers)
-		paidTokens.Tags = append(paidTokens.Tags, tags)
-		paidTokens.Messages = append(paidTokens.Messages, msgs)
+		// Pop the top blinding factor
+		xT := crypto.UnblindPoint(xbP[0], unspentTokens.BlindingFactors[denom][0])
+		sk := crypto.DeriveKey(h2cObj.Hash(), xT, header)
+		msg := [][]byte{testMsg}
+		reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, msg)
+		tag := [][]byte{header, reqBinder}
+		tag = append(tag, h2cParamsBytes)
+		paidTokens.Headers = append(paidTokens.Headers, header)
+		paidTokens.Tags = append(paidTokens.Tags, tag)
+		paidTokens.Messages = append(paidTokens.Messages, msg)
 	}
 
 	file, err = json.MarshalIndent(paidTokens, "", " ")

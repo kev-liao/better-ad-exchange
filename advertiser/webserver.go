@@ -61,7 +61,7 @@ func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
 	href := "https://adidas.com"
 	src := "https://picsum.photos/seed/picsum/200/300"
 	price := bidRequest.Bid
-	markup :=  fmt.Sprintf("<a href=\"%s\"><img src=\"%s\"></a>", href, src)
+	markup := fmt.Sprintf("<a href=\"%s\"><img src=\"%s\"></a>", href, src)
 	
 	response := &btd.WinResponse{
 		Price: price,

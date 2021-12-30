@@ -124,7 +124,7 @@ func main() {
 			return
 		}
 		fmt.Println(winResponse)
-	
+		
 		// 4. Pay tokens
 		tokenPayment := &btd.TokenPayment{
 			Price: winResponse.Price,

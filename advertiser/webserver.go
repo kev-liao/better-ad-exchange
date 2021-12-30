@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"io/ioutil"	
 	"log"
-	//"math/rand"	
+	"math/rand"	
 	"net/http"
 
 	"github.com/kev-liao/challenge-bypass-server"
 )
 
+var bidLen = 8
+
 type AdServer struct {
+	// TODO: Eventually, pay tokens on demand
 	PaidTokens map[int]*btd.PaidTokens
 }
 
@@ -27,12 +30,11 @@ func (s *AdServer) bidRequestHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-	//min := 235
-    //max := 255
-    //bid := rand.Intn(max - min) + min
-	bid := 255
+	max := 2^bidLen - 1
+	min := 2^(bidLen - 1)
+    bid := rand.Intn(max - min) + min
 
-	response := &btd.BidResponse{Bid: bid}
+	response := &btd.BidResponse{Id: 0, Bid: bid}
 	jsonData, err := json.Marshal(response)
 	if err != nil {
 		log.Fatal(err)
@@ -45,6 +47,11 @@ func (s *AdServer) bidRequestHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
+    if r.Method != "POST" {
+        http.Error(w, "Method is not supported.", http.StatusNotFound)
+        return
+    }
+	
 	bidRequest := &btd.BidResponse{}
 	err := json.NewDecoder(r.Body).Decode(&bidRequest)	
 	if err != nil {
@@ -56,8 +63,12 @@ func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
 	price := bidRequest.Bid
 	markup :=  fmt.Sprintf("<a href=\"%s\"><img src=\"%s\"></a>", href, src)
 	
-	response := &btd.WinResponse{Price: price, Markup: markup, Tokens: []*btd.PaidTokens{}}
-	for i := 0; i < 8; i++ {
+	response := &btd.WinResponse{
+		Price: price,
+		Markup: markup,
+		Tokens: []*btd.PaidTokens{}}
+	
+	for i := 0; i < bidLen; i++ {
 		if (price >> i & 1) == 1 {
 			response.Tokens = append(response.Tokens, s.PaidTokens[i])
 		}
@@ -68,7 +79,6 @@ func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 		return
 	}
-	
 	w.Header().Set("Content-Type", "application/json")	
 	w.Write(jsonData)
 	
@@ -76,11 +86,7 @@ func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	var address, tokenFile string
-	var port int
-
-	flag.StringVar(&address, "addr", "127.0.0.1", "address to send to")
-	flag.IntVar(&port, "p", 2416, "port to send on")
+	var tokenFile string
 	flag.StringVar(&tokenFile, "in", "", "path to the token file")
 	flag.Parse()
 

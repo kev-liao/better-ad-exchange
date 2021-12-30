@@ -2,15 +2,15 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"	
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"	
+	"log"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/kev-liao/challenge-bypass-server"	
+	"github.com/kev-liao/challenge-bypass-server"
 )
 
 func makeURL(urlStr, resource string) string {
@@ -20,7 +20,7 @@ func makeURL(urlStr, resource string) string {
 }
 
 func makeBidRequest(id int, callbackUrl string, ch chan<-btd.BidResponse) {
-	client := &http.Client{}		
+	client := &http.Client{}
 	request, err := http.NewRequest(
 		"GET",
 		makeURL(callbackUrl, "/bidrequest"),
@@ -29,7 +29,7 @@ func makeBidRequest(id int, callbackUrl string, ch chan<-btd.BidResponse) {
 		log.Fatal(err)
 		ch <- btd.BidResponse{Id: id, Bid: 0}
 		return
-	}	
+	}
 	response, err := client.Do(request)
 	if err != nil {
 		log.Fatal(err)
@@ -44,7 +44,7 @@ func makeBidRequest(id int, callbackUrl string, ch chan<-btd.BidResponse) {
 		err = json.Unmarshal(body, &bidResponse)
 		if err != nil {
 			log.Fatal(err)
-			ch <- btd.BidResponse{Id: id, Bid: 0}			
+			ch <- btd.BidResponse{Id: id, Bid: 0}
 			return
 		}
 		bidResponse.Id = id
@@ -52,7 +52,7 @@ func makeBidRequest(id int, callbackUrl string, ch chan<-btd.BidResponse) {
 		return
 	} else {
 		ch <- btd.BidResponse{Id: id, Bid: 0}
-		return		
+		return
 	}
 }
 
@@ -76,11 +76,11 @@ func main() {
 	start := time.Now()
 	for i := 0; i < aucSize; i++ {
 		// TODO: Pre-initialize urls
-		urls[i] = "http://localhost:8080"		
+		urls[i] = "http://localhost:8080"
 		go makeBidRequest(i, urls[i], ch)
 	}
 	for i := range bids {
-		bids[i] = <-ch 
+		bids[i] = <-ch
 	}
     elapsed := time.Since(start)
     log.Printf("Visit callback URLs: %s", elapsed)
@@ -112,12 +112,12 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-	defer response.Body.Close()	
+	defer response.Body.Close()
 	fmt.Printf("Win notice response: %s\n", response.Status)
 	if response.Status == "200 OK" {
 		fmt.Println(response.Header)
 		body, _ := ioutil.ReadAll(response.Body)
-		winResponse := &btd.WinResponse{}		
+		winResponse := &btd.WinResponse{}
 		err = json.Unmarshal([]byte(body), &winResponse)
 		if err != nil {
 			log.Fatal(err)
@@ -135,7 +135,7 @@ func main() {
 			return
 		}
 		publisherUrl := "http://localhost:8081"
-		start = time.Now()		
+		start = time.Now()
 		request, err = http.NewRequest(
 			"POST",
 			makeURL(publisherUrl, "/tokens"),
@@ -149,14 +149,14 @@ func main() {
 			log.Fatal(err)
 			return
 		}
-		defer response.Body.Close()		
-		fmt.Printf("Payment response: %s\n", response.Status)		
+		defer response.Body.Close()
+		fmt.Printf("Payment response: %s\n", response.Status)
 		if response.Status == "200 OK" {
 			fmt.Println(response.Header)
 			body, _ := ioutil.ReadAll(response.Body)
 			fmt.Println(string(body))
 		}
 		elapsed = time.Since(start)
-		log.Printf("Pay tokens: %s", elapsed)		
+		log.Printf("Pay tokens: %s", elapsed)
 	}
 }

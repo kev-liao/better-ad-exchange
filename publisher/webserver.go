@@ -25,12 +25,17 @@ var	(
 )
 
 func (s *PubServer) tokenHandler(w http.ResponseWriter, r *http.Request) {
+    if r.Method != "POST" {
+        http.Error(w, "Method is not supported.", http.StatusNotFound)
+        return
+    }
+	
 	payment := &btd.TokenPayment{}
 	err := json.NewDecoder(r.Body).Decode(&payment)
 	if err != nil {
 		log.Fatal(err)
 		return
-    }		
+    }
 
 	// TODO: Check that tokens add up to price
 	

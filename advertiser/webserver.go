@@ -53,7 +53,7 @@ func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
     }
 	
 	bidRequest := &btd.BidResponse{}
-	err := json.NewDecoder(r.Body).Decode(&bidRequest)	
+	err := json.NewDecoder(r.Body).Decode(&bidRequest)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -79,7 +79,7 @@ func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")	
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonData)
 	
 	return
@@ -111,5 +111,5 @@ func main() {
     fmt.Printf("Starting ad server at port 8080\n")
     if err := http.ListenAndServe(":8080", nil); err != nil {
         log.Fatal(err)
-    }	
+    }
 }

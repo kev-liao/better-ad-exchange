@@ -21,7 +21,10 @@ func makeURL(urlStr, resource string) string {
 
 func makeBidRequest(id int, callbackUrl string, ch chan<-btd.BidResponse) {
 	client := &http.Client{}		
-	request, err := http.NewRequest("GET", makeURL(callbackUrl, "/bidrequest"), nil)
+	request, err := http.NewRequest(
+		"GET",
+		makeURL(callbackUrl, "/bidrequest"),
+		nil)
 	if err != nil {
 		log.Fatal(err)
 		ch <- btd.BidResponse{Id: id, Bid: 0}
@@ -95,7 +98,8 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-	request, err := http.NewRequest("POST",
+	request, err := http.NewRequest(
+		"POST",
 		makeURL(winnerUrl, "/win"),
 		bytes.NewBuffer(jsonBid))
 	if err != nil {
@@ -122,16 +126,17 @@ func main() {
 		fmt.Println(winResponse)
 	
 		// 4. Pay tokens
-		tokenPayment := &btd.TokenPayment{}
-		tokenPayment.Price = winResponse.Price
-		tokenPayment.Tokens = winResponse.Tokens
+		tokenPayment := &btd.TokenPayment{
+			Price: winResponse.Price,
+			Tokens: winResponse.Tokens}
 		jsonPayment, err := json.Marshal(tokenPayment)
 		if err != nil {
 			log.Fatal(err)
 			return
 		}
 		publisherUrl := "http://localhost:8081"
-		request, err = http.NewRequest("POST",
+		request, err = http.NewRequest(
+			"POST",
 			makeURL(publisherUrl, "/tokens"),
 			bytes.NewBuffer(jsonPayment))
 		if err != nil {

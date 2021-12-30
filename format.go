@@ -31,10 +31,9 @@ type UnspentTokens struct {
 }
 
 type PaidTokens struct {
-	Denom    int
-	Headers  [][]byte
-	Tags     [][][]byte
-	Messages [][][]byte
+	Headers  [][][]byte
+	Tags     [][][][]byte
+	Messages [][][][]byte
 }
 
 // This is a transport format induced by internal systems. It should be

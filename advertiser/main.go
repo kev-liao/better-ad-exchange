@@ -159,7 +159,7 @@ func main() {
 
 	var unspentToks = &btd.UnspentTokens{}
 	for denom, numTokens := range denoms {
-		requestBytes, tokens, bP, bF, err := makeTokenRequest(h2cObj, denom, numTokens)
+		requestBytes, headers, bP, bF, err := makeTokenRequest(h2cObj, denom, numTokens)
 		if err != nil {
 			errLog.Fatal(err)
 			return
@@ -208,7 +208,7 @@ func main() {
 			return
 		}
 
-		unspentToks.Headers = append(unspentToks.Headers, tokens)
+		unspentToks.Headers = append(unspentToks.Headers, headers)
 		unspentToks.BlindingFactors = append(unspentToks.BlindingFactors, bF)
 		unspentToks.SignedTokens = append(unspentToks.SignedTokens, response.Sigs)
 	}

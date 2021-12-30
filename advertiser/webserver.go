@@ -16,7 +16,7 @@ var bidLen = 8
 
 type AdServer struct {
 	// TODO: Eventually, pay tokens on demand
-	PaidTokens map[int]*btd.PaidTokens
+	PaidTokens *btd.PaidTokens
 }
 
 func (s *AdServer) bidRequestHandler(w http.ResponseWriter, r *http.Request) {
@@ -66,11 +66,18 @@ func (s *AdServer) winNoticeHandler(w http.ResponseWriter, r *http.Request) {
 	response := &btd.WinResponse{
 		Price: price,
 		Markup: markup,
-		Tokens: []*btd.PaidTokens{}}
+		Tokens: &btd.PaidTokens{}}
 	
 	for i := 0; i < bidLen; i++ {
+		// XXX: Should only send over one of each denomination
 		if (price >> i & 1) == 1 {
-			response.Tokens = append(response.Tokens, s.PaidTokens[i])
+			response.Tokens.Headers = append(response.Tokens.Headers, s.PaidTokens.Headers[i])
+			response.Tokens.Tags = append(response.Tokens.Tags, s.PaidTokens.Tags[i])
+			response.Tokens.Messages = append(response.Tokens.Messages, s.PaidTokens.Messages[i])
+		} else {
+			response.Tokens.Headers = append(response.Tokens.Headers, [][]byte{})
+			response.Tokens.Tags = append(response.Tokens.Tags, [][][]byte{})
+			response.Tokens.Messages = append(response.Tokens.Messages, [][][]byte{})
 		}
 	}
 
@@ -91,7 +98,7 @@ func main() {
 	flag.Parse()
 
 	srv := &AdServer{}
-	srv.PaidTokens = make(map[int]*btd.PaidTokens)
+	srv.PaidTokens = &btd.PaidTokens{}
 
 	file, err := ioutil.ReadFile(tokenFile)
 	if err != nil {

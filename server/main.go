@@ -110,7 +110,7 @@ func (c *Server) handle(conn *net.TCPConn) error {
 	case btd.ISSUE:
 		metrics.CounterIssueTotal.Inc()
 		// XXX
-		i := request.Denom[0]
+		i := request.Denoms[0]
 		err = btd.HandleIssue(conn, request, c.signKeys[i], c.keyVersion, c.G[i], c.H[i], c.MaxTokens)
 		if err != nil {
 			metrics.CounterIssueError.Inc()
@@ -121,8 +121,8 @@ func (c *Server) handle(conn *net.TCPConn) error {
 		metrics.CounterRedeemTotal.Inc()
 		// Choose correct redemption key
 		// XXX
-		redeemKey := [][]byte{c.redeemKeys[request.Denom[0]]}
-		err = btd.HandleRedeem(conn, request, wrapped.Message, redeemKey)
+		//redeemKey := [][]byte{c.redeemKeys[request.Denoms[0]]}
+		err = btd.HandleRedeem(conn, request, wrapped.Message, c.redeemKeys)
 		if err != nil {
 			metrics.CounterRedeemError.Inc()
 			conn.Write([]byte(err.Error())) // anything other than "success" counts as a VERIFY_ERROR

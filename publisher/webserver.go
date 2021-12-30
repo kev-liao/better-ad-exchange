@@ -42,9 +42,8 @@ func (s *PubServer) tokenHandler(w http.ResponseWriter, r *http.Request) {
 	// Redeem tokens with ad exchange
 	redeemRequest := &btd.BlindTokenRequest{
 		Type: "Redeem",
-		Contents: token.Tags,
-		Denom: token.Denom}
-
+		Contents: payment.Tokens.Tags}
+	
 	encoded, _ := btd.MarshalRequest(redeemRequest)
 	wrappedRequest := &btd.BlindTokenRequestWrapper{
 		Request: encoded,

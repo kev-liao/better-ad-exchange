@@ -63,7 +63,7 @@ func ApproveTokens(req BlindTokenRequest, key []byte, keyVersion string, G, H *c
 
 	// Unmarshal the incoming blinded points
 	// XXX
-	P, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), req.Contents[0])
+	P, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), req.Contents[0][0])
 	if err != nil {
 		return issueResponse, err
 	}
@@ -117,46 +117,50 @@ func ApproveTokens(req BlindTokenRequest, key []byte, keyVersion string, G, H *c
 // error on failure.
 func RedeemToken(req BlindTokenRequest, message []byte, keys [][]byte) error {
 	// If the length is 3 then the curve parameters are provided by the client
-	// XXX
-	token, requestBinder := req.Contents[0][0], req.Contents[0][1]
-	curveParams, err := getClientCurveParams(req.Contents[0])
-	if err != nil {
-		return err
-	}
-	h2cObj, err := curveParams.GetH2CObj()
-	if err != nil {
-		return err
-	}
-
-	T, err := h2cObj.HashToCurve(token)
-	if err != nil {
-		return err
-	}
-	requestData := [][]byte{message}
-
-	var valid bool
-	for _, key := range keys {
-		sharedPoint := crypto.SignPoint(T, key)
-		sharedKey := crypto.DeriveKey(h2cObj.Hash(), sharedPoint, token)
-		valid = crypto.CheckRequestBinding(h2cObj.Hash(), sharedKey, requestBinder, requestData)
-		if valid {
-			break
+	for i := 0; i < len(req.Contents); i++ {
+		if len(req.Contents[i]) != 0 {
+			token, requestBinder := req.Contents[i][0][0], req.Contents[i][0][1]
+			curveParams, err := getClientCurveParams(req.Contents[i][0])
+			if err != nil {
+				return err
+			}
+			h2cObj, err := curveParams.GetH2CObj()
+			if err != nil {
+				return err
+			}
+			
+			T, err := h2cObj.HashToCurve(token)
+			if err != nil {
+				return err
+			}
+			requestData := [][]byte{message}
+			
+			var valid bool
+			// XXX: Choose correct key
+			for _, key := range keys {
+				sharedPoint := crypto.SignPoint(T, key)
+				sharedKey := crypto.DeriveKey(h2cObj.Hash(), sharedPoint, token)
+				valid = crypto.CheckRequestBinding(h2cObj.Hash(), sharedKey, requestBinder, requestData)
+				if valid {
+					break
+				}
+			}
+			
+			if !valid {
+				metrics.CounterRedeemErrorVerify.Inc()
+				return fmt.Errorf("%s, message: %s, token: %v, request_binder: %v", ErrInvalidMAC.Error(), message, new(big.Int).SetBytes(token), new(big.Int).SetBytes(requestBinder))
+			}
+			
+			doubleSpent := SpentTokens.CheckToken(token)
+			if doubleSpent {
+				metrics.CounterDoubleSpend.Inc()
+				return ErrDoubleSpend
+			}
+			
+			SpentTokens.AddToken(token)			
 		}
 	}
-
-	if !valid {
-		metrics.CounterRedeemErrorVerify.Inc()
-		return fmt.Errorf("%s, message: %s, token: %v, request_binder: %v", ErrInvalidMAC.Error(), message, new(big.Int).SetBytes(token), new(big.Int).SetBytes(requestBinder))
-	}
-
-	doubleSpent := SpentTokens.CheckToken(token)
-	if doubleSpent {
-		metrics.CounterDoubleSpend.Inc()
-		return ErrDoubleSpend
-	}
-
-	SpentTokens.AddToken(token)
-
+	
 	return nil
 }
 

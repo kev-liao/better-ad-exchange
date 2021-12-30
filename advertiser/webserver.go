@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"	
 	"log"
-	"math/rand"	
+	//"math/rand"	
 	"net/http"
 
 	"github.com/kev-liao/challenge-bypass-server"
@@ -27,9 +27,10 @@ func (s *AdServer) bidRequestHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-	min := 235
-    max := 255
-    bid := rand.Intn(max - min) + min
+	//min := 235
+    //max := 255
+    //bid := rand.Intn(max - min) + min
+	bid := 255
 
 	response := &btd.BidResponse{Bid: bid}
 	jsonData, err := json.Marshal(response)

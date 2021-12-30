@@ -7,6 +7,7 @@ import (
 // Web server structs
 
 type BidResponse struct {
+	Id  int
 	Bid int
 }
 

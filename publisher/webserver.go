@@ -31,7 +31,6 @@ func (s *PubServer) tokenHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 		return
     }		
-	fmt.Println(payment)
 
 	// TODO: Check that tokens add up to price
 	
@@ -73,12 +72,12 @@ func (s *PubServer) tokenHandler(w http.ResponseWriter, r *http.Request) {
 		}	
 
 		if string(redeemResponse) != "success" {
-			w.Write([]byte("<b>Tokens rejected.</b>"))
+			w.Write([]byte("0"))
 			return
 		}
 	}
 	
-	w.Write([]byte("<b>Tokens accepted.</b>"))
+	w.Write([]byte("1"))
 }
 
 func main() {

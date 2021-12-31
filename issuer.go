@@ -120,10 +120,11 @@ func RedeemToken(req BlindTokenRequest, message []byte, keys [][]byte) error {
 	for i := 0; i < len(req.Contents); i++ {
 		if len(req.Contents[i]) != 0 {
 			token, requestBinder := req.Contents[i][0], req.Contents[i][1]
-			curveParams, err := getClientCurveParams(req.Contents[i])
-			if err != nil {
-				return err
-			}
+			//curveParams, err := getClientCurveParams(req.Contents[i])
+			//if err != nil {
+			//	return err
+			//}
+			curveParams := &crypto.CurveParams{Curve: "p256", Hash: "sha256", Method: "swu"}
 			h2cObj, err := curveParams.GetH2CObj()
 			if err != nil {
 				return err

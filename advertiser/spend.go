@@ -67,8 +67,8 @@ func main() {
 		sk := crypto.DeriveKey(h2cObj.Hash(), xT, header)
 		msg := [][]byte{testMsg}
 		reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, msg)
-		contents := [][]byte{header, reqBinder}
-		contents = append(contents, h2cParamsBytes)
+		// XXX: h2cParams are redundant
+		contents := [][]byte{header, reqBinder, h2cParamsBytes}
 		paidTokens.Contents = append(paidTokens.Contents, contents)
 		paidTokens.Messages = append(paidTokens.Messages, msg)
 	}

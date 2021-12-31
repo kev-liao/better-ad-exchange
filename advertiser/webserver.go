@@ -19,9 +19,8 @@ var (
 )
 
 type AdServer struct {
-	// TODO: Eventually, pay tokens on demand
+	// XXX: Eventually, pay tokens on demand
 	PaidTokens *btd.PaidTokens
-
 }
 
 func (s *AdServer) bidRequestHandler(w http.ResponseWriter, r *http.Request) {

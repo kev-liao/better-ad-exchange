@@ -30,11 +30,6 @@ func main() {
 		errLog.Fatal(err)
 		return
 	}
-	//h2cParamsBytes, err := json.Marshal(cp)
-	//if err != nil {
-	//	errLog.Fatal(err)
-	//	return
-	//}
 
 	file, err := ioutil.ReadFile(unspentTokenFile)
 	if err != nil {
@@ -67,8 +62,6 @@ func main() {
 		sk := crypto.DeriveKey(h2cObj.Hash(), xT, header)
 		msg := [][]byte{testMsg}
 		reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, msg)
-		// XXX: h2cParams are redundant
-		//contents := [][]byte{header, reqBinder, h2cParamsBytes}
 		contents := [][]byte{header, reqBinder}
 		paidTokens.Contents = append(paidTokens.Contents, contents)
 		paidTokens.Messages = append(paidTokens.Messages, msg)

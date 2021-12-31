@@ -152,7 +152,7 @@ func main() {
 		return
 	}
 
-	var denoms map[int]int
+	var denoms []int
 	err = json.Unmarshal([]byte(file), &denoms)
 	if err != nil {
 		errLog.Fatal(err)

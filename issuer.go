@@ -133,15 +133,9 @@ func RedeemToken(req BlindTokenRequest, message []byte, keys [][]byte) error {
 			requestData := [][]byte{message}
 			
 			var valid bool
-			// XXX: Choose correct key
-			for _, key := range keys {
-				sharedPoint := crypto.SignPoint(T, key)
-				sharedKey := crypto.DeriveKey(h2cObj.Hash(), sharedPoint, token)
-				valid = crypto.CheckRequestBinding(h2cObj.Hash(), sharedKey, requestBinder, requestData)
-				if valid {
-					break
-				}
-			}
+			sharedPoint := crypto.SignPoint(T, keys[i])
+			sharedKey := crypto.DeriveKey(h2cObj.Hash(), sharedPoint, token)
+			valid = crypto.CheckRequestBinding(h2cObj.Hash(), sharedKey, requestBinder, requestData)
 			
 			if !valid {
 				metrics.CounterRedeemErrorVerify.Inc()

@@ -4,7 +4,8 @@ import (
 	stdcrypto "crypto"		
 	crand "crypto/rand"		
 	"crypto/elliptic"
-	"encoding/json"	
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/kev-liao/challenge-bypass-server/crypto"	
@@ -49,7 +50,7 @@ func fakeKeyAndCommitments(h2cObj crypto.H2CObject) ([]byte, *crypto.Point, *cry
 	return x, G, H, nil
 }
 
-func advertiserTokenRequest(b *testing.B, h2cObj crypto.H2CObject, numTokens int) ([]byte, [][]byte, []*crypto.Point, [][]byte, error) {
+func makeTokenRequest(h2cObj crypto.H2CObject, numTokens int) ([]byte, [][]byte, []*crypto.Point, [][]byte, error) {
 	tokens := make([][]byte, numTokens)
 	bF := make([][]byte, numTokens)
 	bP := make([]*crypto.Point, numTokens)
@@ -91,8 +92,12 @@ var cp = &crypto.CurveParams{Curve: "p256", Hash: "sha256", Method: "swu"}
 var h2cObj, _ = cp.GetH2CObj()
 var key, G, H, _ = fakeKeyAndCommitments(h2cObj)
 
+func benchmarkMakeTokenRequest(b *testing.B, numTokens int) {
+	makeTokenRequest(h2cObj, numTokens)
+}
+
 func BenchmarkAdvertiserTokenRequest100(b *testing.B) {
-	advertiserTokenRequest(b, h2cObj, 100)
+	benchmarkMakeTokenRequest(b, 100)
 }
 
 //func BenchmarkAdvertiserTokenRequest1000(b *testing.B) {
@@ -107,6 +112,11 @@ func BenchmarkAdvertiserTokenRequest100(b *testing.B) {
 //func BenchmarkAdvertiserTokenRequest10000(b *testing.B) {
 //	benchmarkAdvertiserTokenRequest(b, h2cObj, 10000)
 //}
+
+func TestAdvertiser100TokenRequestSize(t *testing.T) {
+	requestBytes, _, _, _, _ := makeTokenRequest(h2cObj, 100)
+	fmt.Println("Request bytes:", len(requestBytes))
+}
 
 // Generates a small but well-formed ISSUE request for testing.
 func makeTokenIssueRequest(h2cObj crypto.H2CObject) (*BlindTokenRequest, [][]byte, []*crypto.Point, [][]byte, error) {

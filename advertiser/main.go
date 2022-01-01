@@ -159,6 +159,7 @@ func main() {
 		return
 	}
 
+	// TODO: Combine token requests
 	var unspentToks = &btd.UnspentTokens{}
 	for denom, numTokens := range denoms {
 		requestBytes, headers, bP, bF, err := makeTokenRequest(h2cObj, denom, numTokens)

@@ -4,6 +4,7 @@ import (
 	stdcrypto "crypto"		
 	crand "crypto/rand"		
 	"crypto/elliptic"
+	"encoding/base64"	
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -96,31 +97,31 @@ func benchmarkMakeTokenRequest(b *testing.B, numTokens int) {
 	makeTokenRequest(h2cObj, numTokens)
 }
 
-func BenchmarkAdvertiserTokenRequest100(b *testing.B) {
-	benchmarkMakeTokenRequest(b, 100)
+//func BenchmarkAdvertiserTokenRequest100(b *testing.B) {
+//	benchmarkMakeTokenRequest(b, 100)
+//}
+
+func BenchmarkAdvertiserTokenRequest1000(b *testing.B) {
+	benchmarkMakeTokenRequest(b, 1000)
 }
 
-//func BenchmarkAdvertiserTokenRequest1000(b *testing.B) {
-//	advertiserTokenRequest(b, h2cObj, 1000)
-//}
-//
 //func BenchmarkAdvertiserTokenRequest5000(b *testing.B) {
-//	advertiserTokenRequest(b, h2cObj, 5000)
+//	benchmarkMakeTokenRequest(b, 5000)
 //}
 //
 // Takes a long time
 //func BenchmarkAdvertiserTokenRequest10000(b *testing.B) {
-//	benchmarkAdvertiserTokenRequest(b, h2cObj, 10000)
+//	benchmarkMakeTokenRequest(b, 10000)
 //}
 
-func TestAdvertiser100TokenRequestSize(t *testing.T) {
-	requestBytes, _, _, _, _ := makeTokenRequest(h2cObj, 100)
-	fmt.Println("Request bytes:", len(requestBytes))
+func TestAdvertiser1000TokenRequestSize(t *testing.T) {
+	requestBytes, _, _, _, _ := makeTokenRequest(h2cObj, 1000)
+	fmt.Println("1000 token request bytes:", len(requestBytes))
 }
 
 // Generates a small but well-formed ISSUE request for testing.
-func makeTokenIssueRequest(h2cObj crypto.H2CObject) (*BlindTokenRequest, [][]byte, []*crypto.Point, [][]byte, error) {
-	tokens := make([][]byte, 1000)
+func makeTokenIssueRequest(h2cObj crypto.H2CObject, numTokens int) (*BlindTokenRequest, [][]byte, []*crypto.Point, [][]byte, error) {
+	tokens := make([][]byte, numTokens)
 	bF := make([][]byte, len(tokens))
 	bP := make([]*crypto.Point, len(tokens))
 	for i := 0; i < len(tokens); i++ {
@@ -144,7 +145,7 @@ func makeTokenIssueRequest(h2cObj crypto.H2CObject) (*BlindTokenRequest, [][]byt
 	return request, tokens, bP, bF, nil
 }
 
-var request, _, bP, _, _ = makeTokenIssueRequest(h2cObj)
+var request, heads, bP, bF, _ = makeTokenIssueRequest(h2cObj, 1000)
 var response, _ = ApproveTokens(*request, key, "1.1", G, H)
 
 // Move function
@@ -153,7 +154,7 @@ func recomputeComposites(G, Y *crypto.Point, P, Q []*crypto.Point, hash stdcrypt
 	return compositeM, compositeZ, err
 }
 
-func BenchmarkAdvertiserCheckProof(b *testing.B) {
+func BenchmarkAdvertiserCheckProof1000(b *testing.B) {
 	xbP, _ := crypto.BatchUnmarshalPoints(h2cObj.Curve(), response.Sigs)
 	dleq, _ := crypto.UnmarshalBatchProof(h2cObj.Curve(), response.Proof)
 	dleq.G = G
@@ -161,3 +162,29 @@ func BenchmarkAdvertiserCheckProof(b *testing.B) {
 	dleq.M, dleq.Z, _ = recomputeComposites(G, H, bP, xbP, h2cObj.Hash(), h2cObj.Curve())
 	dleq.Verify()
 }
+
+func TestAdvertiser1000TokenResponseSize(t *testing.T) {
+	// Encodes the issue response as a JSON object
+	jsonResp, _ := json.Marshal(response)
+
+	// which we then wrap in another layer of base64 to avoid any transit or parsing mishaps
+	base64Envelope := make([]byte, base64.StdEncoding.EncodedLen(len(jsonResp)))
+	base64.StdEncoding.Encode(base64Envelope, jsonResp)
+	fmt.Println("1000 token response bytes:", len(base64Envelope))
+}
+
+var testMsg = []byte("test")
+var bidSize = 8
+var request2, headers, bPs, bFs, _ = makeTokenIssueRequest(h2cObj, bidSize)
+var response2, _ = ApproveTokens(*request2, key, "1.1", G, H)
+var xbPs, _ = crypto.BatchUnmarshalPoints(h2cObj.Curve(), response2.Sigs)
+
+func BenchmarkAdvertiserMakePayment(b *testing.B) {
+	for i := 0; i < bidSize; i++ {
+		xT := crypto.UnblindPoint(xbPs[i], bFs[i])
+		sk := crypto.DeriveKey(h2cObj.Hash(), xT, headers[i])
+		msg := [][]byte{testMsg}
+		_ = crypto.CreateRequestBinding(h2cObj.Hash(), sk, msg)		
+	}
+}
+

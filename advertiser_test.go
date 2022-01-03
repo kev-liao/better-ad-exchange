@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+    "unsafe"	
 
 	"github.com/kev-liao/challenge-bypass-server/crypto"	
 )
@@ -147,6 +148,21 @@ func makeTokenIssueRequest(h2cObj crypto.H2CObject, numTokens int) (*BlindTokenR
 
 var request, heads, bP, bF, _ = makeTokenIssueRequest(h2cObj, 1000)
 var response, _ = ApproveTokens(*request, key, "1.1", G, H)
+var xbP, _ = crypto.BatchUnmarshalPoints(h2cObj.Curve(), response.Sigs)
+func TestAdvertiser1000TokenStorage(t *testing.T) {
+	headerBytes := 0
+	bFbytes := 0
+    xbPbytes := 0
+	for i := 0; i < 1000; i++ {
+		headerBytes += len(heads[i])
+		bFbytes += len(bF[i])
+		xbPbytes += int(unsafe.Sizeof(*xbP[i]))
+	}
+	fmt.Println("Storage for 1k headers:", headerBytes)
+	fmt.Println("Storage for 1k blinding factors:", bFbytes)
+	fmt.Println("Storage for 1k signed tokens:", xbPbytes)
+	fmt.Println("Storage for 1k unspent tokens:", headerBytes + bFbytes + xbPbytes)	
+}
 
 // Move function
 func recomputeComposites(G, Y *crypto.Point, P, Q []*crypto.Point, hash stdcrypto.Hash, curve elliptic.Curve) (*crypto.Point, *crypto.Point, error) {
@@ -154,8 +170,8 @@ func recomputeComposites(G, Y *crypto.Point, P, Q []*crypto.Point, hash stdcrypt
 	return compositeM, compositeZ, err
 }
 
+// XXX
 func BenchmarkAdvertiserCheckProof1000(b *testing.B) {
-	xbP, _ := crypto.BatchUnmarshalPoints(h2cObj.Curve(), response.Sigs)
 	dleq, _ := crypto.UnmarshalBatchProof(h2cObj.Curve(), response.Proof)
 	dleq.G = G
 	dleq.H = H

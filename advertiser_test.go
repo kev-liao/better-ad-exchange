@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"encoding/base64"	
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
     "unsafe"	
@@ -200,7 +201,97 @@ func BenchmarkAdvertiserMakePayment(b *testing.B) {
 		xT := crypto.UnblindPoint(xbPs[i], bFs[i])
 		sk := crypto.DeriveKey(h2cObj.Hash(), xT, headers[i])
 		msg := [][]byte{testMsg}
-		_ = crypto.CreateRequestBinding(h2cObj.Hash(), sk, msg)		
+		_ = crypto.CreateRequestBinding(h2cObj.Hash(), sk, msg)
 	}
 }
 
+// Sign tokens for verifying DLEQ proof
+func signTokens(P []*crypto.Point, key []byte) []*crypto.Point {
+	Q := make([]*crypto.Point, len(P))
+	for i := 0; i < len(Q); i++ {
+		Q[i] = crypto.SignPoint(P[i], key)
+	}
+	return Q
+}
+
+func makeTokenRedempRequest(x []byte, G, H *crypto.Point, h2cObj crypto.H2CObject) (*BlindTokenRequest, error) {
+	// Client
+	request, tokens, bP, bF, err := makeTokenIssueRequest(h2cObj, 1000)
+	if err != nil {
+		return nil, err
+	}
+
+	// Client -> (request) -> Server
+
+	// Server
+	// Sign the blind points (x is the signing key)
+	marshaledData, err := ApproveTokens(*request, x, "1.1", G, H)
+	if err != nil {
+		return nil, err
+	}
+
+	// Client <- (signed blind tokens) <- Server
+
+	// Client
+	// a. Umarshal signed+blinded points
+	// XXX: hardcoded curve assumption
+	marshaledPoints, marshaledBP := marshaledData.Sigs, marshaledData.Proof
+	xbP, err := crypto.BatchUnmarshalPoints(h2cObj.Curve(), marshaledPoints)
+	if err != nil {
+		return nil, err
+	}
+
+	// b. Unmarshal and verify batch proof
+	// We need to re-sign all the tokens and re-compute
+	dleq, err := crypto.UnmarshalBatchProof(h2cObj.Curve(), marshaledBP)
+	if err != nil {
+		return nil, err
+	}
+	dleq.G = G
+	dleq.H = H
+	Q := signTokens(bP, x)
+	dleq.M, dleq.Z, err = recomputeComposites(G, H, bP, Q, h2cObj.Hash(), h2cObj.Curve())
+	if err != nil {
+		return nil, err
+	}
+	if !dleq.Verify() {
+		return nil, errors.New("Batch proof failed to verify")
+	}
+
+	// c. Unblind a point
+	xT := crypto.UnblindPoint(xbP[0], bF[0])
+	// d. Derive MAC key
+	sk := crypto.DeriveKey(h2cObj.Hash(), xT, tokens[0])
+	// e. MAC the request binding data
+	reqData := [][]byte{[]byte("test")}
+	reqBinder := crypto.CreateRequestBinding(h2cObj.Hash(), sk, reqData)
+	contents := [][]byte{tokens[0], reqBinder}
+	var h2cParamsBytes []byte
+	if h2cObj.Method() == "swu" {
+		curveParams := &crypto.CurveParams{Curve: "p256", Hash: "sha256", Method: "swu"}
+		h2cParamsBytes, err = json.Marshal(curveParams)
+		if err != nil {
+			return nil, err
+		}
+		contents = append(contents, h2cParamsBytes)
+	}
+
+	redeemRequest := &BlindTokenRequest{
+		Type:     "Redeem",
+		Contents: [][][]byte{contents},
+		Denoms:   []int{0},
+	}
+
+	return redeemRequest, nil
+}
+
+var redempRequest, _ = makeTokenRedempRequest(key, G, H, h2cObj)
+var redeemKeys = [][]byte{key}
+
+func BenchmarkExchangeRedemption(b *testing.B) {
+	RedeemToken(*redempRequest, []byte("test"), redeemKeys)
+}
+
+func BenchmarkExchangeIssuance(b *testing.B) {
+	ApproveTokens(*request, key, "1.1", G, H)	
+}

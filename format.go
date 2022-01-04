@@ -46,7 +46,7 @@ type BlindTokenRequestWrapper struct {
 // { type : (Issue|Redeem), contents : list of b64-encoded blinded points }
 type BlindTokenRequest struct {
 	Type     ReqType      `json:"type"`
-	Contents [][][]byte `json:"contents"`
+	Contents [][][]byte   `json:"contents"`
 	Denoms   []int        `json:"denoms"`
 }
 
